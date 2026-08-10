@@ -9,6 +9,8 @@ import type { ContactActivityRecord, CustomWorkflowStep } from "../../types";
 import { mergeSteps } from "../../lib/workflowUtils";
 import { StepConfigFields, STEP_DEFAULTS, TYPE_ICON_BG, StepTypeIcon, type StepDraft } from "./StepConfigForm";
 import { toast } from "sonner";
+import { effectiveSendMode } from "../../lib/workflowSendScope";
+import { getMatchedListings } from "../../lib/segmentUtils";
 
 const USER_TYPE_AVATAR: Record<string, string> = {
   Broker: "bg-blue-100 text-blue-700",
@@ -113,10 +115,11 @@ interface WorkflowContactPanelProps {
 type TabId = "steps" | "history";
 
 export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId, onClose }: WorkflowContactPanelProps) {
-  const { contacts, workflowEnrollments, workflows, contactActivity, emailHistory, handleSetEnrollmentStatus, handleSkipStep, handleUnskipStep, handleCustomizeDelay, handleMoveToStep, handleAddCustomStep, handleRemoveCustomStep } = useAppData();
+  const { contacts, workflowEnrollments, workflows, segments, contactActivity, emailHistory, handleSetEnrollmentStatus, handleSkipStep, handleUnskipStep, handleCustomizeDelay, handleMoveToStep, handleAddCustomStep, handleRemoveCustomStep } = useAppData();
   const [activeTab, setActiveTab] = useState<TabId>("steps");
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
+  const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
 
   // Edit mode: unlocks per-contact journey editing controls
   const [isEditing, setIsEditing] = useState(false);
@@ -222,6 +225,12 @@ export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId
 
   if (!open || !contact || !enrollment || !workflow) return null;
 
+  const flowSegment = segments.find((s) => s.id === workflow.segmentId);
+  const segmentFilters = flowSegment?.filters ?? [];
+  const flowListings = getMatchedListings(contact, segmentFilters);
+  // Default to the first listing; fall back gracefully if the selected one no longer matches.
+  const activeListing = flowListings.find((l) => l.id === selectedListingId) ?? flowListings[0] ?? null;
+
   const avatarClass = USER_TYPE_AVATAR[contact.userType] ?? "bg-gray-100 text-gray-700";
   const isPaused = enrollment.status === "paused";
   const isCompleted = enrollment.status === "completed";
@@ -315,6 +324,26 @@ export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId
               {/* Step Progress tab */}
               {activeTab === "steps" && (
                 <div className="space-y-2">
+                  {/* Listing switcher — view one listing's timeline at a time (CRM-700) */}
+                  {flowListings.length > 1 && (
+                    <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                      <span className="text-xs text-muted-foreground mr-1">Listing:</span>
+                      {flowListings.map((l) => (
+                        <button
+                          key={l.id}
+                          type="button"
+                          onClick={() => setSelectedListingId(l.id)}
+                          className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                            activeListing?.id === l.id
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "border-border text-muted-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {l.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {/* Edit Journey banner */}
                   {!isCompleted && (
                     isEditing ? (
@@ -573,6 +602,9 @@ export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId
                         step.note || step.senderIdentity || step.reminderDaysBefore
                       );
 
+                      const isSendable = step.actionType === "email" || step.actionType === "sms";
+                      const isPerListing = isSendable && effectiveSendMode(step) === "per-listing";
+
                       const timelineNode = isDone && isCompleted ? (
                         <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center shrink-0 z-10 ring-2 ring-background">
                           <CheckCircle2 className="h-4 w-4 text-gray-500" />
@@ -661,6 +693,16 @@ export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId
                                     new Date(new Date(enrollment.startDate).getTime() + step.dayOffset * 86_400_000)
                                   )}
                                 </span>
+                                {isPerListing && activeListing && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 shrink-0 whitespace-nowrap">
+                                    For {activeListing.name}
+                                  </span>
+                                )}
+                                {isPerListing && !activeListing && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 shrink-0 whitespace-nowrap">
+                                    No matching listing
+                                  </span>
+                                )}
                                 {hasDetail && !isSkipped && (
                                   isExpanded
                                     ? <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
