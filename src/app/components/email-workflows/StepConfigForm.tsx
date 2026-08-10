@@ -169,6 +169,7 @@ export function StepConfigLeft({
                 type="button"
                 disabled={forced}
                 onClick={() => onChange({ sendMode: "once" })}
+                aria-pressed={mode === "once"}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   mode === "once" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
                 } ${forced ? "opacity-40 cursor-not-allowed" : ""}`}
@@ -178,6 +179,7 @@ export function StepConfigLeft({
               <button
                 type="button"
                 onClick={() => onChange({ sendMode: "per-listing" })}
+                aria-pressed={mode === "per-listing"}
                 className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
                   mode === "per-listing" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
                 }`}

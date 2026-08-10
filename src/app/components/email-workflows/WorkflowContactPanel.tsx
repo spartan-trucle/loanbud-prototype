@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Mail, MessageCircle, Phone, CheckCircle2, Clock, X, Pause, Play, SkipForward, ChevronDown, ChevronRight, User, MapPin, Ban, Check, Plus, Trash2, Pencil, Lock, UserCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
@@ -120,6 +120,10 @@ export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
   const [selectedListingId, setSelectedListingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedListingId(null);
+  }, [contactId]);
 
   // Edit mode: unlocks per-contact journey editing controls
   const [isEditing, setIsEditing] = useState(false);
