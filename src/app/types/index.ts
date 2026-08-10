@@ -299,6 +299,8 @@ export interface WorkflowStep {
   message?: string;
   note?: string;
   reminderDaysBefore?: number;
+  /** CRM-700: send scope for email/SMS steps. "once" = one send per contact; "per-listing" = one send per matching listing. Forced to per-listing at runtime when the template uses a {{listing.*}} token. */
+  sendMode?: "once" | "per-listing";
   outcomeRules?: OutcomeRule[];
   // ── V2: Conditional (if/else) step fields ────────────────────────────────────
   conditionField?: string;
