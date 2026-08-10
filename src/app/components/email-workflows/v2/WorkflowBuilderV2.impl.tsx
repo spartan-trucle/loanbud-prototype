@@ -207,6 +207,7 @@ function BranchStepConfigModal({
     message: step.message,
     note: step.note,
     reminderDaysBefore: step.reminderDaysBefore,
+    sendMode: step.sendMode,
   });
   const [delayInput, setDelayInput] = useState(() => stepToDelayString(step));
   const [delayError, setDelayError] = useState<string | null>(null);
@@ -803,6 +804,7 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
     message: step.message,
     note: step.note,
     reminderDaysBefore: step.reminderDaysBefore,
+    sendMode: step.sendMode,
   });
 
   const safeCondField = (step.conditionField && FIELD_CONFIG[step.conditionField as FilterFieldV2])
