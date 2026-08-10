@@ -258,7 +258,6 @@ function StepsTimeline({ steps, enrollmentStats }: {
 function ContactCard({
   contact,
   enrollmentId,
-  listingId,
   columnId,
   currentStep,
   scheduledDate,
@@ -267,7 +266,6 @@ function ContactCard({
 }: {
   contact: Contact;
   enrollmentId: string;
-  listingId?: string;
   columnId: string;
   currentStep: WorkflowStep | null;
   scheduledDate: Date | null;
@@ -298,10 +296,8 @@ function ContactCard({
 
   const { label: statusLabel, dotClass } = getCardStatus({ enrollmentStatus, cantSend, isAutoStep, scheduledDate });
 
-  // Resolve the specific listing this enrollment is for; fall back to primary listing on contact
-  const resolvedListing = listingId
-    ? (contact.listings?.find((l) => l.id === listingId) ?? { name: contact.listingName, status: contact.listingStatus })
-    : { name: contact.listingName, status: contact.listingStatus };
+  // One enrollment per contact (CRM-700) — show the contact's primary listing
+  const resolvedListing = { name: contact.listingName, status: contact.listingStatus };
 
   return (
     <div
@@ -431,7 +427,6 @@ function KanbanColumn({
               key={enrollment.id}
               contact={contact}
               enrollmentId={enrollment.id}
-              listingId={enrollment.listingId}
               columnId={colId}
               currentStep={currentStep}
               scheduledDate={scheduledDate}

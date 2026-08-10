@@ -345,8 +345,6 @@ export interface WorkflowEnrollment {
   id: string;
   workflowId: string;
   contactId: string;
-  /** V2: which listing this enrollment is for. Undefined for non-listing-filtered enrollments. */
-  listingId?: string;
   startDate: Date;
   status: "active" | "completed" | "paused";
   stepProgress: WorkflowStepProgress[];
