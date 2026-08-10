@@ -4,6 +4,7 @@ import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useAppData } from "../../contexts/AppDataContext";
+import { hasListingToken, effectiveSendMode } from "../../lib/workflowSendScope";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,6 +23,8 @@ export interface StepDraft {
   message?: string;
   note?: string;
   reminderDaysBefore?: number;
+  /** CRM-700: "once" per contact vs "per-listing". Forced to per-listing when the template uses a {{listing.*}} token. */
+  sendMode?: "once" | "per-listing";
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -154,6 +157,48 @@ export function StepConfigLeft({
 
   return (
     <div className="space-y-5">
+      {/* Send scope (email & SMS) — CRM-700 */}
+      {(draft.actionType === "email" || draft.actionType === "sms") && (() => {
+        const forced = hasListingToken(draft);
+        const mode = effectiveSendMode(draft);
+        return (
+          <div>
+            <FieldLabel>Send to</FieldLabel>
+            <div className="inline-flex rounded-lg border border-input bg-background p-0.5">
+              <button
+                type="button"
+                disabled={forced}
+                onClick={() => onChange({ sendMode: "once" })}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  mode === "once" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                } ${forced ? "opacity-40 cursor-not-allowed" : ""}`}
+              >
+                Once per contact
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange({ sendMode: "per-listing" })}
+                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
+                  mode === "per-listing" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                One per listing
+              </button>
+            </div>
+            {forced ? (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                This template uses listing details (e.g. <code>{"{{listing.name}}"}</code>), so it must be sent once per
+                listing — the CRM can't know which listing to fill in for a single email.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-1.5">
+                A contact with multiple listings receives one email per listing when set to "One per listing."
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Sender Identity (email only) */}
       {draft.actionType === "email" && (
         <div>
@@ -252,11 +297,15 @@ export function StepConfigRight({
             value={draft.templateId ?? ""}
             onValueChange={(v) => {
               const tpl = adminEmailTemplates.find((t) => t.id === v);
+              const nextSubject = tpl?.subject ?? draft.subject;
+              const nextBody = tpl?.body ?? draft.body;
+              const forced = hasListingToken({ actionType: "email", subject: nextSubject, body: nextBody });
               onChange({
                 templateId: v,
                 templateName: tpl?.name ?? "",
-                subject: tpl?.subject ?? draft.subject,
-                body: tpl?.body ?? draft.body,
+                subject: nextSubject,
+                body: nextBody,
+                sendMode: forced ? "per-listing" : draft.sendMode,
               });
             }}
           >
@@ -293,10 +342,13 @@ export function StepConfigRight({
             value={draft.smsTemplateId ?? ""}
             onValueChange={(v) => {
               const tpl = smsTemplates.find((t) => t.id === v);
+              const nextMessage = tpl?.message ?? draft.message;
+              const forced = hasListingToken({ actionType: "sms", message: nextMessage });
               onChange({
                 smsTemplateId: v,
                 smsTemplateName: tpl?.name ?? "",
-                message: tpl?.message ?? draft.message,
+                message: nextMessage,
+                sendMode: forced ? "per-listing" : draft.sendMode,
               });
             }}
           >
