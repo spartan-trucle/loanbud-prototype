@@ -87,7 +87,7 @@ interface AppDataContextValue {
   handleCreateWorkflow: (w: Omit<Workflow, "id" | "createdAt" | "enrolledCount">) => void;
   handleUpdateWorkflow: (id: string, updates: Partial<Workflow>) => void;
   handleDeleteWorkflow: (id: string) => void;
-  handleEnrollContacts: (workflowId: string, entries: { contactId: string; listingId?: string }[], startDate: Date) => void;
+  handleEnrollContacts: (workflowId: string, entries: { contactId: string }[], startDate: Date) => void;
   handleActivateWorkflow: (workflowId: string) => void;
   handleAdvanceStep: (enrollmentId: string, stepId: string) => void;
   handleMoveToStep: (enrollmentId: string, targetStepId: string | "completed") => void;
@@ -1023,25 +1023,23 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       enrolledCount: 0,
     };
 
-    // Auto-enroll matching segment contacts — one enrollment per matching listing
+    // Auto-enroll matching segment contacts — one enrollment per contact (CRM-700)
     const segment = segments.find((s) => s.id === w.segmentId);
-    const enrollmentPairs = segment && segment.status === "Active"
-      ? contacts.flatMap((c) =>
-          getMatchedListings(c, segment.filters).map((l) => ({ contactId: c.id, listingId: l.id }))
-        )
-      : [];
+    const enrolledContactIds =
+      segment && segment.status === "Active"
+        ? contacts.filter((c) => getMatchedListings(c, segment.filters).length > 0).map((c) => c.id)
+        : [];
     const startDate = new Date();
-    const newEnrollments: WorkflowEnrollment[] = enrollmentPairs.map(({ contactId, listingId }) => ({
-      id: `enroll-${Date.now()}-${contactId}-${listingId ?? ""}`,
+    const newEnrollments: WorkflowEnrollment[] = enrolledContactIds.map((contactId) => ({
+      id: `enroll-${Date.now()}-${contactId}`,
       workflowId: newWorkflow.id,
       contactId,
-      listingId,
       startDate,
       status: "active" as const,
       stepProgress: newWorkflow.steps.map((s) => ({ stepId: s.id, status: "pending" as const })),
     }));
-    // enrolledCount shows unique contacts, not total enrollments
-    newWorkflow.enrolledCount = new Set(enrollmentPairs.map((p) => p.contactId)).size;
+    // enrolledCount shows unique contacts
+    newWorkflow.enrolledCount = enrolledContactIds.length;
 
     const callTasks = buildCallReminderTaskItems(newWorkflow, newEnrollments, contacts);
     const updatedWorkflows = [...workflows, newWorkflow];
@@ -1112,7 +1110,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     store.workflowEnrollments.write(updatedEnrollments);
   };
 
-  const handleEnrollContacts = (workflowId: string, entries: { contactId: string; listingId?: string }[], startDate: Date) => {
+  const handleEnrollContacts = (workflowId: string, entries: { contactId: string }[], startDate: Date) => {
     const workflow = workflows.find((wf) => wf.id === workflowId);
     if (!workflow) return;
     const enrollSegment = segments.find((s) => s.id === workflow.segmentId);
@@ -1120,28 +1118,23 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       toast.error("Cannot enroll contacts — the linked segment is inactive.");
       return;
     }
-    // Dedup key: contactId::listingId (listing-scoped when listingId present)
-    const alreadyEnrolledKeys = new Set(
-      workflowEnrollments
-        .filter((e) => e.workflowId === workflowId)
-        .map((e) => `${e.contactId}::${e.listingId ?? ""}`),
+    // Dedup by contact — one enrollment per (workflow, contact) (CRM-700)
+    const alreadyEnrolled = new Set(
+      workflowEnrollments.filter((e) => e.workflowId === workflowId).map((e) => e.contactId),
     );
-    const newEntries = entries.filter(
-      ({ contactId, listingId }) => !alreadyEnrolledKeys.has(`${contactId}::${listingId ?? ""}`),
-    );
+    const newEntries = entries.filter(({ contactId }) => !alreadyEnrolled.has(contactId));
     const skipped = entries.length - newEntries.length;
     if (skipped > 0) {
       toast.info(`${skipped} enrollment${skipped > 1 ? "s" : ""} skipped — already enrolled`);
     }
     if (newEntries.length === 0) return;
-    const newEnrollments: WorkflowEnrollment[] = newEntries.map(({ contactId, listingId }) => {
-      const contactEnrollments = workflowEnrollments.filter(e => e.contactId === contactId);
-      const allPaused = contactEnrollments.length > 0 && contactEnrollments.every(e => e.status === "paused");
+    const newEnrollments: WorkflowEnrollment[] = newEntries.map(({ contactId }) => {
+      const contactEnrollments = workflowEnrollments.filter((e) => e.contactId === contactId);
+      const allPaused = contactEnrollments.length > 0 && contactEnrollments.every((e) => e.status === "paused");
       return {
-        id: `enroll-${Date.now()}-${contactId}-${listingId ?? ""}`,
+        id: `enroll-${Date.now()}-${contactId}`,
         workflowId,
         contactId,
-        listingId,
         startDate,
         status: allPaused ? ("paused" as const) : ("active" as const),
         stepProgress: workflow.steps.map((s: WorkflowStep) => ({ stepId: s.id, status: "pending" as const })),
@@ -1149,7 +1142,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
     const updatedEnrollments = [...workflowEnrollments, ...newEnrollments];
     const updatedWorkflows = workflows.map((wf) =>
-      wf.id === workflowId ? { ...wf, enrolledCount: wf.enrolledCount + newIds.length } : wf,
+      wf.id === workflowId ? { ...wf, enrolledCount: wf.enrolledCount + newEnrollments.length } : wf,
     );
     const callTasks = buildCallReminderTaskItems(workflow, newEnrollments, contacts);
     const updatedItems = callTasks.length > 0 ? [...taskItems, ...callTasks] : taskItems;
@@ -1210,17 +1203,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const workflow = workflows.find((wf) => wf.id === workflowId);
     if (!workflow) return;
 
-    // Build already-enrolled keys (contactId::listingId) to deduplicate listing-scoped enrollments
-    const alreadyEnrolledKeys = new Set(
-      workflowEnrollments
-        .filter((e) => e.workflowId === workflowId)
-        .map((e) => `${e.contactId}::${e.listingId ?? ""}`),
-    );
+    // Build already-enrolled contact set (CRM-700: one enrollment per contact)
     const enrolledContactIds = new Set(
       workflowEnrollments.filter((e) => e.workflowId === workflowId).map((e) => e.contactId),
     );
 
-    // Resolve the segment's filters (if any) so we only enroll listings that actually match
+    // Resolve the segment's filters (if any) so we only enroll contacts that actually match
     const segment = segments.find((s) => s.id === workflow.segmentId);
 
     // If the segment is inactive, activate the workflow status but skip enrollment
@@ -1236,28 +1224,21 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
     const segmentFilters: FilterRule[] = segment?.filters ?? [];
 
-    // Pick up to 8 contacts not already enrolled, then expand to matched-listing pairs only
-    const available = contacts.filter((c) => !enrolledContactIds.has(c.id));
+    // Pick up to 8 not-yet-enrolled contacts that match the segment
+    const available = contacts.filter(
+      (c) => !enrolledContactIds.has(c.id) && getMatchedListings(c, segmentFilters).length > 0,
+    );
     const selected = available.slice(0, 8);
 
-    // getMatchedListings returns only the listings that satisfy the segment's listing filters.
-    // For non-listing segments it returns all listings collapsed to one (primary) per contact.
-    const pairs = selected.flatMap((contact) => {
-      return getMatchedListings(contact, segmentFilters)
-        .filter((l) => !alreadyEnrolledKeys.has(`${contact.id}::${l.id}`))
-        .map((l) => ({ contact, listingId: l.id }));
-    });
-
     const now = new Date();
-    const newEnrollments: WorkflowEnrollment[] = pairs.map(({ contact, listingId }, idx) => {
+    const newEnrollments: WorkflowEnrollment[] = selected.map((contact, idx) => {
       const startDate = new Date(now.getTime() - idx * 2 * 24 * 60 * 60 * 1000);
       const stepProgress = generateMockProgress(workflow.steps, idx);
       const allDone = stepProgress.every((p) => p.status === "done" || p.status === "skipped");
       return {
-        id: `enroll-${workflowId}-${contact.id}-${listingId}-${Date.now() + idx}`,
+        id: `enroll-${workflowId}-${contact.id}-${Date.now() + idx}`,
         workflowId,
         contactId: contact.id,
-        listingId,
         startDate,
         status: allDone ? ("completed" as const) : ("active" as const),
         stepProgress,
