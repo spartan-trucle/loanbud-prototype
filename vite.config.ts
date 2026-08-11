@@ -36,6 +36,8 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ["**/*.svg", "**/*.csv"],
-  base: "/loanbud-prototype/",
+  // Vercel serves at the domain root ("/"); GitHub Pages serves under the repo
+  // path. Vercel sets process.env.VERCEL during the build.
+  base: process.env.VERCEL ? "/" : "/loanbud-prototype/",
   appType: 'spa',
 });
