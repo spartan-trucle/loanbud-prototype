@@ -595,16 +595,21 @@ function StepRow({
             <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold flex-shrink-0 select-none whitespace-nowrap">
               Step {index + 1} · Day {Math.floor(step.dayOffset)}
             </span>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isConditional && (
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5 flex-shrink-0">
-                  <GitBranch className="h-3 w-3" />
-                  IF/ELSE
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {isConditional && (
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5 flex-shrink-0">
+                    <GitBranch className="h-3 w-3" />
+                    IF/ELSE
+                  </span>
+                )}
+                <span className="font-semibold text-foreground text-sm truncate">
+                  {step.name || (isConditional ? "IF/ELSE Block" : STEP_DEFAULTS[step.actionType as ActionType])}
                 </span>
+              </div>
+              {stepSubtitle(step) && (
+                <span className="text-xs text-muted-foreground truncate mt-0.5">{stepSubtitle(step)}</span>
               )}
-              <span className="font-semibold text-foreground text-sm truncate">
-                {step.name || (isConditional ? "IF/ELSE Block" : STEP_DEFAULTS[step.actionType as ActionType])}
-              </span>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               {isIncomplete && (

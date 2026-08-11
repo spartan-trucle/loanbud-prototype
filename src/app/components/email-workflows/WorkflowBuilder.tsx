@@ -123,6 +123,13 @@ function defaultDelayStep(): WorkflowStep {
   };
 }
 
+function stepSummary(step: WorkflowStep): string | undefined {
+  if (step.actionType === "email") return step.subject || step.templateName;
+  if (step.actionType === "sms") return step.smsTemplateName || step.message;
+  if (step.actionType === "call-reminder" || step.actionType === "voicemail-reminder") return step.note;
+  return undefined;
+}
+
 // ─── StepRow ──────────────────────────────────────────────────────────────────
 
 const STEP_DRAG_TYPE = "WORKFLOW_STEP";
@@ -320,10 +327,13 @@ function StepRow({
                 <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold flex items-center justify-center flex-shrink-0 select-none whitespace-nowrap">
                   Step {index + 1} · Day {Math.floor(step.dayOffset)}
                 </span>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex flex-col flex-1 min-w-0">
                   <span className="font-semibold text-foreground text-sm truncate">
                     {step.name || STEP_DEFAULTS[step.actionType]}
                   </span>
+                  {stepSummary(step) && (
+                    <span className="text-xs text-muted-foreground truncate mt-0.5">{stepSummary(step)}</span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {isIncomplete && (
