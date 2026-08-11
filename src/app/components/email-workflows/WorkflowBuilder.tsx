@@ -47,6 +47,7 @@ import {
   type ActionType,
   type StepDraft,
 } from "./StepConfigForm";
+import { StepSummary } from "./StepSummary";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -189,6 +190,7 @@ function StepRow({
     message: step.message,
     note: step.note,
     reminderDaysBefore: step.reminderDaysBefore,
+    sendMode: step.sendMode,
   });
 
   useEffect(() => {
@@ -205,6 +207,7 @@ function StepRow({
       message: step.message,
       note: step.note,
       reminderDaysBefore: step.reminderDaysBefore,
+      sendMode: step.sendMode,
     });
   }, [step, isEditing]);
 
@@ -306,24 +309,25 @@ function StepRow({
                 tabIndex={0}
                 onClick={onEdit}
                 onKeyDown={(e) => e.key === "Enter" && onEdit()}
-                className="rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-sm transition-all px-4 py-3 flex items-center gap-3 cursor-pointer"
+                className="rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-sm transition-all px-4 py-3 flex items-start gap-3 cursor-pointer"
               >
                 <div
                   ref={(el) => { drag(el); }}
                   onClick={(e) => e.stopPropagation()}
-                  className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0 -ml-1"
+                  className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0 -ml-1 mt-0.5"
                 >
                   <GripVertical className="h-4 w-4" />
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold flex items-center justify-center flex-shrink-0 select-none whitespace-nowrap">
-                  Step {index + 1} · Day {Math.floor(step.dayOffset)}
+                <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold flex items-center justify-center flex-shrink-0 select-none whitespace-nowrap mt-0.5">
+                  Day {Math.floor(step.dayOffset)}
                 </span>
-                <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex flex-col flex-1 min-w-0">
                   <span className="font-semibold text-foreground text-sm truncate">
                     {step.name || STEP_DEFAULTS[step.actionType]}
                   </span>
+                  <StepSummary step={step} />
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
                   {isIncomplete && (
                     <span title="Setup incomplete — missing template" className="flex-shrink-0">
                       <AlertCircle className="h-3.5 w-3.5 text-destructive" />

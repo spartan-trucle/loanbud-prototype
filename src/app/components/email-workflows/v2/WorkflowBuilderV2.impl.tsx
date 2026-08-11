@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
 import { useNavigate, useParams, useLocation } from "react-router";
 import {
   ArrowLeft,
@@ -19,7 +19,6 @@ import {
   GitBranch,
   MoreHorizontal,
   Plus,
-  Zap,
 } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -58,6 +57,7 @@ import {
   type ActionType,
   type StepDraft,
 } from "../StepConfigForm";
+import { StepSummary } from "@/app/components/email-workflows/StepSummary";
 import {
   Dialog,
   DialogContent,
@@ -76,45 +76,6 @@ import {
 
 // ─── Step templates ───────────────────────────────────────────────────────────
 
-interface StepTemplate {
-  id: string;
-  name: string;
-  description: string;
-  steps: Array<{ name: string; actionType: ActionType; dayOffset: number }>;
-}
-
-const STEP_TEMPLATES: StepTemplate[] = [
-  {
-    id: "14-day-comms",
-    name: "Active Sequence",
-    description:
-      "11-step sequence over 14 days: email, call, and SMS touchpoints",
-    steps: [
-      { name: "First Email", actionType: "email", dayOffset: 0 },
-      { name: "Call Reminder Step", actionType: "call-reminder", dayOffset: 0 },
-      { name: "Send SMS Step", actionType: "sms", dayOffset: 0 },
-      { name: "Send Email Step", actionType: "email", dayOffset: 2 },
-      { name: "Call Reminder", actionType: "call-reminder", dayOffset: 3 },
-      { name: "Delayed SMS", actionType: "sms", dayOffset: 4 },
-      { name: "Follow up Email", actionType: "email", dayOffset: 6 },
-      { name: "Call Reminder", actionType: "call-reminder", dayOffset: 7 },
-      { name: "Send SMS Step", actionType: "sms", dayOffset: 9 },
-      { name: "Send Email Step", actionType: "email", dayOffset: 11 },
-      { name: "Final Call", actionType: "call-reminder", dayOffset: 14 },
-    ],
-  },
-  {
-    id: "calls-closed",
-    name: "Calls Closed Sequence",
-    description:
-      "3-step closing sequence: email, call reminder, then SMS follow-up",
-    steps: [
-      { name: "Send Email", actionType: "email", dayOffset: 0 },
-      { name: "Call Reminder", actionType: "call-reminder", dayOffset: 1 },
-      { name: "Send SMS", actionType: "sms", dayOffset: 2 },
-    ],
-  },
-];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -207,6 +168,7 @@ function BranchStepConfigModal({
     message: step.message,
     note: step.note,
     reminderDaysBefore: step.reminderDaysBefore,
+    sendMode: step.sendMode,
   });
   const [delayInput, setDelayInput] = useState(() => stepToDelayString(step));
   const [delayError, setDelayError] = useState<string | null>(null);
@@ -583,29 +545,32 @@ function StepRow({
           }`}
         >
           {/* ── Top row: drag / badge / name / actions ── */}
-          <div className="px-4 py-3 flex items-center gap-3">
+          <div className="px-4 py-3 flex items-start gap-3">
             <div
               ref={(el) => { drag(el); }}
               onClick={(e) => e.stopPropagation()}
-              className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0 -ml-1"
+              className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0 -ml-1 mt-0.5"
             >
               <GripVertical className="h-4 w-4" />
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold flex-shrink-0 select-none whitespace-nowrap">
-              Step {index + 1} · Day {Math.floor(step.dayOffset)}
+            <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-semibold flex-shrink-0 select-none whitespace-nowrap mt-0.5">
+              Day {Math.floor(step.dayOffset)}
             </span>
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isConditional && (
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5 flex-shrink-0">
-                  <GitBranch className="h-3 w-3" />
-                  IF/ELSE
+            <div className="flex flex-col flex-1 min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {isConditional && (
+                  <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 rounded-full px-2 py-0.5 flex-shrink-0">
+                    <GitBranch className="h-3 w-3" />
+                    IF/ELSE
+                  </span>
+                )}
+                <span className="font-semibold text-foreground text-sm truncate">
+                  {step.name || (isConditional ? "IF/ELSE Block" : STEP_DEFAULTS[step.actionType as ActionType])}
                 </span>
-              )}
-              <span className="font-semibold text-foreground text-sm truncate">
-                {step.name || (isConditional ? "IF/ELSE Block" : STEP_DEFAULTS[step.actionType as ActionType])}
-              </span>
+              </div>
+              <StepSummary step={step} />
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
               {isIncomplete && (
                 <span title="Setup incomplete — missing template">
                   <AlertCircle className="h-3.5 w-3.5 text-destructive" />
@@ -803,6 +768,7 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
     message: step.message,
     note: step.note,
     reminderDaysBefore: step.reminderDaysBefore,
+    sendMode: step.sendMode,
   });
 
   const safeCondField = (step.conditionField && FIELD_CONFIG[step.conditionField as FilterFieldV2])
@@ -1056,54 +1022,6 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
   );
 }
 
-// ─── generateWorkflowSummary ──────────────────────────────────────────────────
-
-function generateWorkflowSummary(
-  steps: WorkflowStep[],
-  workflowName?: string,
-  segmentName?: string,
-  contactCount?: number,
-): string {
-  const actionSteps = steps.filter((s) => s.actionType !== "delay" && s.actionType !== "conditional");
-  if (actionSteps.length === 0) return "Add steps to build your workflow. A summary will appear here once you have at least one action.";
-
-  const emailCount = actionSteps.filter((s) => s.actionType === "email").length;
-  const smsCount = actionSteps.filter((s) => s.actionType === "sms").length;
-  const callCount = actionSteps.filter((s) => s.actionType === "call-reminder").length;
-  const hasConditional = steps.some((s) => s.actionType === "conditional");
-  const maxDay = Math.max(...steps.map((s) => Math.floor(s.dayOffset ?? 0)));
-  const touchpoints = actionSteps.length;
-
-  // Channel description
-  const channels: string[] = [];
-  if (emailCount > 0) channels.push(`${emailCount} email${emailCount > 1 ? "s" : ""}`);
-  if (callCount > 0) channels.push(`${callCount} call${callCount > 1 ? "s" : ""}`);
-  if (smsCount > 0) channels.push(`${smsCount} SMS${smsCount > 1 ? " messages" : ""}`);
-  const channelStr = channels.length > 1
-    ? channels.slice(0, -1).join(", ") + " and " + channels[channels.length - 1]
-    : channels[0] ?? "touchpoints";
-
-  // Opening touch
-  const firstAction = actionSteps[0];
-  const firstDesc = firstAction.actionType === "email"
-    ? `an introductory email${firstAction.templateName ? ` ("${firstAction.templateName}")` : ""}`
-    : firstAction.actionType === "sms"
-    ? "an SMS message"
-    : "a call reminder";
-
-  // Audience context
-  const audienceClause = segmentName
-    ? `targeting ${contactCount ? `${contactCount.toLocaleString()} contacts in ` : ""}"${segmentName}"`
-    : "for your target audience";
-
-  // Conditional clause
-  const conditionalClause = hasConditional
-    ? " Conditional branching personalizes the path based on contact attributes."
-    : "";
-
-  return `A ${maxDay}-day, ${touchpoints}-touch sequence ${audienceClause}. Opens with ${firstDesc}, then follows up with ${channelStr} spread over the full ${maxDay} days to maintain engagement without overwhelming contacts.${conditionalClause}`;
-}
-
 // ─── WorkflowBuilderV2 ────────────────────────────────────────────────────────
 
 export function WorkflowBuilderV2() {
@@ -1131,8 +1049,7 @@ export function WorkflowBuilderV2() {
   const [isDirty, setIsDirty] = useState(false);
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [addStepOpen, setAddStepOpen] = useState(false);
-  const addStepRef = useRef<HTMLDivElement>(null);
+  const [panelWidth, setPanelWidth] = useState(420);
   const [nameError, setNameError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false);
@@ -1144,9 +1061,6 @@ export function WorkflowBuilderV2() {
       if (segmentRef.current && !segmentRef.current.contains(e.target as Node)) {
         setSegmentOpen(false);
         setSegmentSearch("");
-      }
-      if (addStepRef.current && !addStepRef.current.contains(e.target as Node)) {
-        setAddStepOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -1285,30 +1199,23 @@ export function WorkflowBuilderV2() {
     if (openIndex === fromIndex) setOpenIndex(toIndex);
   };
 
-  const handleLoadTemplate = (tpl: StepTemplate) => {
-    const actionStepsCount = steps.filter(
-      (s) => s.actionType !== "delay",
-    ).length;
-    if (actionStepsCount > 0) {
-      if (
-        !window.confirm(
-          `Replace current steps with the "${tpl.name}" template?`,
-        )
-      )
-        return;
-    }
-    const sorted = [...tpl.steps].sort((a, b) => a.dayOffset - b.dayOffset);
-    const result: WorkflowStep[] = [];
-    sorted.forEach((s, i) => {
-      result.push({ ...defaultStep(0, s.actionType), name: s.name });
-      if (i < sorted.length - 1) {
-        const gap = sorted[i + 1].dayOffset - s.dayOffset;
-        if (gap > 0) result.push({ ...defaultDelayStep(), delayDays: gap });
-      }
-    });
-    setSteps(recompute(result));
-    setOpenIndex(null);
-    setIsDirty(false);
+  const handlePanelResizeStart = (e: ReactMouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = panelWidth;
+    const onMove = (ev: MouseEvent) => {
+      // Right-hand panel: dragging the left edge leftwards widens it.
+      const next = Math.min(680, Math.max(320, startWidth - (ev.clientX - startX)));
+      setPanelWidth(next);
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.userSelect = "";
+    };
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
 
   const handleSave = () => {
@@ -1611,84 +1518,43 @@ export function WorkflowBuilderV2() {
         {wizardStep === 1 && (
           <div className="flex-1 flex overflow-hidden">
 
-            {/* ── Left sidebar: add step + AI summary ── */}
-            <div className="w-[220px] flex-shrink-0 border-r border-border bg-card flex flex-col">
-              {/* Add Step — outside scroll so dropdown isn't clipped */}
-              <div className="px-3 pt-4 pb-3 relative flex-shrink-0" ref={addStepRef}>
+            {/* ── Sidebar: actions ── */}
+            <div className="w-[220px] flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
+              <div className="px-3 pt-4 pb-4 flex flex-col">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-1 pb-1.5">Actions</p>
+                {TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleAddStep(opt.value)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors text-left"
+                  >
+                    <span className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${TYPE_ICON_BG[opt.value]}`}>
+                      <StepTypeIcon type={opt.value} />
+                    </span>
+                    {opt.label}
+                  </button>
+                ))}
                 <button
                   type="button"
-                  onClick={() => setAddStepOpen((o) => !o)}
-                  className="w-full flex items-center justify-center gap-2 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  onClick={handleAddDelayFromSidebar}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors text-left"
                 >
-                  <Plus className="h-4 w-4 flex-shrink-0" />
-                  Add Step
+                  <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
+                    <Clock className="h-4 w-4" />
+                  </span>
+                  Delay
                 </button>
-                {addStepOpen && (
-                  <div className="absolute left-3 right-3 top-full mt-0.5 z-50 bg-popover border border-border rounded-lg shadow-lg py-1 overflow-hidden">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-3 pt-2 pb-1">Actions</p>
-                    {TYPE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => { handleAddStep(opt.value); setAddStepOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
-                      >
-                        <span className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${TYPE_ICON_BG[opt.value]}`}>
-                          <StepTypeIcon type={opt.value} />
-                        </span>
-                        {opt.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => { handleAddDelayFromSidebar(); setAddStepOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
-                    >
-                      <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
-                        <Clock className="h-4 w-4" />
-                      </span>
-                      Delay
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { handleAddCondition(); setAddStepOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
-                    >
-                      <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
-                        <GitBranch className="h-4 w-4" />
-                      </span>
-                      Condition
-                    </button>
-                    <div className="border-t border-border my-1" />
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-3 pt-1 pb-1">Templates</p>
-                    {STEP_TEMPLATES.map((tpl) => (
-                      <button
-                        key={tpl.id}
-                        type="button"
-                        onClick={() => { handleLoadTemplate(tpl); setAddStepOpen(false); }}
-                        className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-muted transition-colors text-left"
-                      >
-                        <span className="text-sm font-medium text-foreground leading-snug">{tpl.name}</span>
-                        <span className="text-[11px] text-muted-foreground leading-snug">{tpl.description}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Scrollable area: AI Summary */}
-              <div className="flex-1 overflow-y-auto px-3 pb-4">
-                <div className="border-t border-border pt-4 flex flex-col gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                    <Zap className="h-3 w-3" />
-                    AI Summary
-                  </p>
-                  <div className="rounded-lg bg-muted/50 px-3 py-2.5">
-                    <p className="text-xs text-muted-foreground leading-relaxed italic">
-                      {generateWorkflowSummary(steps, name, selectedSegment?.name, selectedSegment?.contactCount)}
-                    </p>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleAddCondition}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors text-left"
+                >
+                  <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
+                    <GitBranch className="h-4 w-4" />
+                  </span>
+                  Condition
+                </button>
               </div>
             </div>
 
@@ -1776,8 +1642,18 @@ export function WorkflowBuilderV2() {
               )}
             </div>
 
-            {/* ── Right panel: Step configuration ── */}
-            <div className="w-[420px] flex-shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
+            {/* Drag handle to resize the step-info panel */}
+            <div
+              onMouseDown={handlePanelResizeStart}
+              title="Drag to resize"
+              className="w-1 flex-shrink-0 cursor-col-resize bg-transparent hover:bg-primary/40 transition-colors"
+            />
+
+            {/* ── Right panel: Step configuration (resizable) ── */}
+            <div
+              className="flex-shrink-0 border-l border-border bg-card flex flex-col overflow-hidden"
+              style={{ width: panelWidth }}
+            >
               {openIndex !== null && steps[openIndex] ? (
                 <StepConfigPanel
                   key={steps[openIndex].id}

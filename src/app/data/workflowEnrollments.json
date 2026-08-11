@@ -3,7 +3,6 @@
     "id": "enroll-1",
     "workflowId": "wf-1",
     "contactId": "1",
-    "listingId": "lst-1-1",
     "startDate": "2026-04-20T00:00:00.000Z",
     "status": "active",
     "stepProgress": [
@@ -20,7 +19,6 @@
     "id": "enroll-2",
     "workflowId": "wf-1",
     "contactId": "2",
-    "listingId": "lst-2-2",
     "startDate": "2026-04-20T00:00:00.000Z",
     "status": "active",
     "stepProgress": [
@@ -37,7 +35,6 @@
     "id": "enroll-3",
     "workflowId": "wf-1",
     "contactId": "3",
-    "listingId": "lst-3-1",
     "startDate": "2026-04-15T00:00:00.000Z",
     "status": "active",
     "stepProgress": [
@@ -54,7 +51,6 @@
     "id": "enroll-4",
     "workflowId": "wf-1",
     "contactId": "4",
-    "listingId": "lst-4-1",
     "startDate": "2026-03-25T00:00:00.000Z",
     "status": "completed",
     "stepProgress": [
@@ -71,7 +67,6 @@
     "id": "enroll-5",
     "workflowId": "wf-3",
     "contactId": "5",
-    "listingId": "lst-5-1",
     "startDate": "2026-04-20T00:00:00.000Z",
     "status": "paused",
     "stepProgress": [
@@ -86,7 +81,6 @@
     "id": "enroll-101",
     "workflowId": "wf-2",
     "contactId": "1",
-    "listingId": "lst-1-1",
     "startDate": "2026-05-02T00:00:00.000Z",
     "status": "active",
     "stepProgress": [
@@ -101,7 +95,6 @@
     "id": "enroll-102",
     "workflowId": "wf-3",
     "contactId": "1",
-    "listingId": "lst-1-1",
     "startDate": "2026-04-18T00:00:00.000Z",
     "status": "paused",
     "pauseReason": "Contact traveling — resume after May 15",
@@ -117,7 +110,6 @@
     "id": "enroll-103",
     "workflowId": "wf-4",
     "contactId": "1",
-    "listingId": "lst-1-1",
     "startDate": "2026-05-04T00:00:00.000Z",
     "status": "active",
     "stepProgress": [
@@ -132,7 +124,6 @@
     "id": "enroll-104",
     "workflowId": "wf-5",
     "contactId": "1",
-    "listingId": "lst-1-2",
     "startDate": "2026-05-01T00:00:00.000Z",
     "status": "active",
     "stepProgress": [
@@ -147,7 +138,6 @@
     "id": "enroll-105",
     "workflowId": "wf-6",
     "contactId": "1",
-    "listingId": "lst-1-1",
     "startDate": "2026-05-05T00:00:00.000Z",
     "status": "active",
     "stepProgress": [
