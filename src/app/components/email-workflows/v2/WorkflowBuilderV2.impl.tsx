@@ -19,7 +19,6 @@ import {
   GitBranch,
   MoreHorizontal,
   Plus,
-  Zap,
 } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -1062,54 +1061,6 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
   );
 }
 
-// ─── generateWorkflowSummary ──────────────────────────────────────────────────
-
-function generateWorkflowSummary(
-  steps: WorkflowStep[],
-  workflowName?: string,
-  segmentName?: string,
-  contactCount?: number,
-): string {
-  const actionSteps = steps.filter((s) => s.actionType !== "delay" && s.actionType !== "conditional");
-  if (actionSteps.length === 0) return "Add steps to build your workflow. A summary will appear here once you have at least one action.";
-
-  const emailCount = actionSteps.filter((s) => s.actionType === "email").length;
-  const smsCount = actionSteps.filter((s) => s.actionType === "sms").length;
-  const callCount = actionSteps.filter((s) => s.actionType === "call-reminder").length;
-  const hasConditional = steps.some((s) => s.actionType === "conditional");
-  const maxDay = Math.max(...steps.map((s) => Math.floor(s.dayOffset ?? 0)));
-  const touchpoints = actionSteps.length;
-
-  // Channel description
-  const channels: string[] = [];
-  if (emailCount > 0) channels.push(`${emailCount} email${emailCount > 1 ? "s" : ""}`);
-  if (callCount > 0) channels.push(`${callCount} call${callCount > 1 ? "s" : ""}`);
-  if (smsCount > 0) channels.push(`${smsCount} SMS${smsCount > 1 ? " messages" : ""}`);
-  const channelStr = channels.length > 1
-    ? channels.slice(0, -1).join(", ") + " and " + channels[channels.length - 1]
-    : channels[0] ?? "touchpoints";
-
-  // Opening touch
-  const firstAction = actionSteps[0];
-  const firstDesc = firstAction.actionType === "email"
-    ? `an introductory email${firstAction.templateName ? ` ("${firstAction.templateName}")` : ""}`
-    : firstAction.actionType === "sms"
-    ? "an SMS message"
-    : "a call reminder";
-
-  // Audience context
-  const audienceClause = segmentName
-    ? `targeting ${contactCount ? `${contactCount.toLocaleString()} contacts in ` : ""}"${segmentName}"`
-    : "for your target audience";
-
-  // Conditional clause
-  const conditionalClause = hasConditional
-    ? " Conditional branching personalizes the path based on contact attributes."
-    : "";
-
-  return `A ${maxDay}-day, ${touchpoints}-touch sequence ${audienceClause}. Opens with ${firstDesc}, then follows up with ${channelStr} spread over the full ${maxDay} days to maintain engagement without overwhelming contacts.${conditionalClause}`;
-}
-
 // ─── WorkflowBuilderV2 ────────────────────────────────────────────────────────
 
 export function WorkflowBuilderV2() {
@@ -1137,8 +1088,6 @@ export function WorkflowBuilderV2() {
   const [isDirty, setIsDirty] = useState(false);
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [addStepOpen, setAddStepOpen] = useState(false);
-  const addStepRef = useRef<HTMLDivElement>(null);
   const [nameError, setNameError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false);
@@ -1150,9 +1099,6 @@ export function WorkflowBuilderV2() {
       if (segmentRef.current && !segmentRef.current.contains(e.target as Node)) {
         setSegmentOpen(false);
         setSegmentSearch("");
-      }
-      if (addStepRef.current && !addStepRef.current.contains(e.target as Node)) {
-        setAddStepOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -1617,84 +1563,57 @@ export function WorkflowBuilderV2() {
         {wizardStep === 1 && (
           <div className="flex-1 flex overflow-hidden">
 
-            {/* ── Left sidebar: add step + AI summary ── */}
-            <div className="w-[220px] flex-shrink-0 border-r border-border bg-card flex flex-col">
-              {/* Add Step — outside scroll so dropdown isn't clipped */}
-              <div className="px-3 pt-4 pb-3 relative flex-shrink-0" ref={addStepRef}>
+            {/* ── Sidebar: actions ── */}
+            <div className="w-[220px] flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
+              <div className="px-3 pt-4 pb-4 flex flex-col">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-1 pb-1.5">Actions</p>
+                {TYPE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleAddStep(opt.value)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors text-left"
+                  >
+                    <span className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${TYPE_ICON_BG[opt.value]}`}>
+                      <StepTypeIcon type={opt.value} />
+                    </span>
+                    {opt.label}
+                  </button>
+                ))}
                 <button
                   type="button"
-                  onClick={() => setAddStepOpen((o) => !o)}
-                  className="w-full flex items-center justify-center gap-2 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  onClick={handleAddDelayFromSidebar}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors text-left"
                 >
-                  <Plus className="h-4 w-4 flex-shrink-0" />
-                  Add Step
+                  <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
+                    <Clock className="h-4 w-4" />
+                  </span>
+                  Delay
                 </button>
-                {addStepOpen && (
-                  <div className="absolute left-3 right-3 top-full mt-0.5 z-50 bg-popover border border-border rounded-lg shadow-lg py-1 overflow-hidden">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-3 pt-2 pb-1">Actions</p>
-                    {TYPE_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => { handleAddStep(opt.value); setAddStepOpen(false); }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
-                      >
-                        <span className={`w-6 h-6 rounded flex items-center justify-center flex-shrink-0 ${TYPE_ICON_BG[opt.value]}`}>
-                          <StepTypeIcon type={opt.value} />
-                        </span>
-                        {opt.label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => { handleAddDelayFromSidebar(); setAddStepOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
-                    >
-                      <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
-                        <Clock className="h-4 w-4" />
-                      </span>
-                      Delay
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { handleAddCondition(); setAddStepOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors text-left"
-                    >
-                      <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
-                        <GitBranch className="h-4 w-4" />
-                      </span>
-                      Condition
-                    </button>
-                    <div className="border-t border-border my-1" />
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-3 pt-1 pb-1">Templates</p>
-                    {STEP_TEMPLATES.map((tpl) => (
-                      <button
-                        key={tpl.id}
-                        type="button"
-                        onClick={() => { handleLoadTemplate(tpl); setAddStepOpen(false); }}
-                        className="w-full flex flex-col items-start gap-0.5 px-3 py-2 hover:bg-muted transition-colors text-left"
-                      >
-                        <span className="text-sm font-medium text-foreground leading-snug">{tpl.name}</span>
-                        <span className="text-[11px] text-muted-foreground leading-snug">{tpl.description}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                <button
+                  type="button"
+                  onClick={handleAddCondition}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-foreground hover:bg-muted transition-colors text-left"
+                >
+                  <span className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0 bg-amber-50 text-amber-600">
+                    <GitBranch className="h-4 w-4" />
+                  </span>
+                  Condition
+                </button>
 
-              {/* Scrollable area: AI Summary */}
-              <div className="flex-1 overflow-y-auto px-3 pb-4">
-                <div className="border-t border-border pt-4 flex flex-col gap-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                    <Zap className="h-3 w-3" />
-                    AI Summary
-                  </p>
-                  <div className="rounded-lg bg-muted/50 px-3 py-2.5">
-                    <p className="text-xs text-muted-foreground leading-relaxed italic">
-                      {generateWorkflowSummary(steps, name, selectedSegment?.name, selectedSegment?.contactCount)}
-                    </p>
-                  </div>
-                </div>
+                <div className="border-t border-border my-2" />
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-1 pb-1.5">Templates</p>
+                {STEP_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => handleLoadTemplate(tpl)}
+                    className="w-full flex flex-col items-start gap-0.5 px-3 py-2 rounded-md hover:bg-muted transition-colors text-left"
+                  >
+                    <span className="text-sm font-medium text-foreground leading-snug">{tpl.name}</span>
+                    <span className="text-[11px] text-muted-foreground leading-snug">{tpl.description}</span>
+                  </button>
+                ))}
               </div>
             </div>
 
