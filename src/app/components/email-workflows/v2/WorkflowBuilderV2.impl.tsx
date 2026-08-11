@@ -1049,7 +1049,7 @@ export function WorkflowBuilderV2() {
   const [isDirty, setIsDirty] = useState(false);
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(220);
+  const [panelWidth, setPanelWidth] = useState(420);
   const [nameError, setNameError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false);
@@ -1199,13 +1199,14 @@ export function WorkflowBuilderV2() {
     if (openIndex === fromIndex) setOpenIndex(toIndex);
   };
 
-  const handleSidebarResizeStart = (e: ReactMouseEvent<HTMLDivElement>) => {
+  const handlePanelResizeStart = (e: ReactMouseEvent<HTMLDivElement>) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startWidth = sidebarWidth;
+    const startWidth = panelWidth;
     const onMove = (ev: MouseEvent) => {
-      const next = Math.min(480, Math.max(180, startWidth + (ev.clientX - startX)));
-      setSidebarWidth(next);
+      // Right-hand panel: dragging the left edge leftwards widens it.
+      const next = Math.min(680, Math.max(320, startWidth - (ev.clientX - startX)));
+      setPanelWidth(next);
     };
     const onUp = () => {
       document.removeEventListener("mousemove", onMove);
@@ -1517,11 +1518,8 @@ export function WorkflowBuilderV2() {
         {wizardStep === 1 && (
           <div className="flex-1 flex overflow-hidden">
 
-            {/* ── Sidebar: actions (resizable) ── */}
-            <div
-              className="flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto"
-              style={{ width: sidebarWidth }}
-            >
+            {/* ── Sidebar: actions ── */}
+            <div className="w-[220px] flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
               <div className="px-3 pt-4 pb-4 flex flex-col">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-1 pb-1.5">Actions</p>
                 {TYPE_OPTIONS.map((opt) => (
@@ -1559,13 +1557,6 @@ export function WorkflowBuilderV2() {
                 </button>
               </div>
             </div>
-
-            {/* Drag handle to resize the actions sidebar */}
-            <div
-              onMouseDown={handleSidebarResizeStart}
-              title="Drag to resize"
-              className="w-1 flex-shrink-0 cursor-col-resize bg-transparent hover:bg-primary/40 transition-colors"
-            />
 
             {/* ── Center: Steps timeline ── */}
             <div className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-5">
@@ -1651,8 +1642,18 @@ export function WorkflowBuilderV2() {
               )}
             </div>
 
-            {/* ── Right panel: Step configuration ── */}
-            <div className="w-[420px] flex-shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
+            {/* Drag handle to resize the step-info panel */}
+            <div
+              onMouseDown={handlePanelResizeStart}
+              title="Drag to resize"
+              className="w-1 flex-shrink-0 cursor-col-resize bg-transparent hover:bg-primary/40 transition-colors"
+            />
+
+            {/* ── Right panel: Step configuration (resizable) ── */}
+            <div
+              className="flex-shrink-0 border-l border-border bg-card flex flex-col overflow-hidden"
+              style={{ width: panelWidth }}
+            >
               {openIndex !== null && steps[openIndex] ? (
                 <StepConfigPanel
                   key={steps[openIndex].id}
