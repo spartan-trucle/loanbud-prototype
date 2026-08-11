@@ -188,5 +188,7 @@ export const router = createBrowserRouter(
     ],
   },
   ],
-  { basename: "/loanbud-prototype" }
+  // Match the router basename to the Vite base so routes resolve both under
+  // the GitHub Pages repo path and at the domain root on Vercel.
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" }
 );
