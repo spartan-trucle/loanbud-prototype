@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type MouseEvent as ReactMouseEvent } from "react";
 import { useNavigate, useParams, useLocation } from "react-router";
 import {
   ArrowLeft,
@@ -76,45 +76,6 @@ import {
 
 // ─── Step templates ───────────────────────────────────────────────────────────
 
-interface StepTemplate {
-  id: string;
-  name: string;
-  description: string;
-  steps: Array<{ name: string; actionType: ActionType; dayOffset: number }>;
-}
-
-const STEP_TEMPLATES: StepTemplate[] = [
-  {
-    id: "14-day-comms",
-    name: "Active Sequence",
-    description:
-      "11-step sequence over 14 days: email, call, and SMS touchpoints",
-    steps: [
-      { name: "First Email", actionType: "email", dayOffset: 0 },
-      { name: "Call Reminder Step", actionType: "call-reminder", dayOffset: 0 },
-      { name: "Send SMS Step", actionType: "sms", dayOffset: 0 },
-      { name: "Send Email Step", actionType: "email", dayOffset: 2 },
-      { name: "Call Reminder", actionType: "call-reminder", dayOffset: 3 },
-      { name: "Delayed SMS", actionType: "sms", dayOffset: 4 },
-      { name: "Follow up Email", actionType: "email", dayOffset: 6 },
-      { name: "Call Reminder", actionType: "call-reminder", dayOffset: 7 },
-      { name: "Send SMS Step", actionType: "sms", dayOffset: 9 },
-      { name: "Send Email Step", actionType: "email", dayOffset: 11 },
-      { name: "Final Call", actionType: "call-reminder", dayOffset: 14 },
-    ],
-  },
-  {
-    id: "calls-closed",
-    name: "Calls Closed Sequence",
-    description:
-      "3-step closing sequence: email, call reminder, then SMS follow-up",
-    steps: [
-      { name: "Send Email", actionType: "email", dayOffset: 0 },
-      { name: "Call Reminder", actionType: "call-reminder", dayOffset: 1 },
-      { name: "Send SMS", actionType: "sms", dayOffset: 2 },
-    ],
-  },
-];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -1088,6 +1049,7 @@ export function WorkflowBuilderV2() {
   const [isDirty, setIsDirty] = useState(false);
   const [pendingIndex, setPendingIndex] = useState<number | null>(null);
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(220);
   const [nameError, setNameError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [incompleteModalOpen, setIncompleteModalOpen] = useState(false);
@@ -1237,30 +1199,22 @@ export function WorkflowBuilderV2() {
     if (openIndex === fromIndex) setOpenIndex(toIndex);
   };
 
-  const handleLoadTemplate = (tpl: StepTemplate) => {
-    const actionStepsCount = steps.filter(
-      (s) => s.actionType !== "delay",
-    ).length;
-    if (actionStepsCount > 0) {
-      if (
-        !window.confirm(
-          `Replace current steps with the "${tpl.name}" template?`,
-        )
-      )
-        return;
-    }
-    const sorted = [...tpl.steps].sort((a, b) => a.dayOffset - b.dayOffset);
-    const result: WorkflowStep[] = [];
-    sorted.forEach((s, i) => {
-      result.push({ ...defaultStep(0, s.actionType), name: s.name });
-      if (i < sorted.length - 1) {
-        const gap = sorted[i + 1].dayOffset - s.dayOffset;
-        if (gap > 0) result.push({ ...defaultDelayStep(), delayDays: gap });
-      }
-    });
-    setSteps(recompute(result));
-    setOpenIndex(null);
-    setIsDirty(false);
+  const handleSidebarResizeStart = (e: ReactMouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+    const onMove = (ev: MouseEvent) => {
+      const next = Math.min(480, Math.max(180, startWidth + (ev.clientX - startX)));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.body.style.userSelect = "";
+    };
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
   };
 
   const handleSave = () => {
@@ -1563,8 +1517,11 @@ export function WorkflowBuilderV2() {
         {wizardStep === 1 && (
           <div className="flex-1 flex overflow-hidden">
 
-            {/* ── Sidebar: actions ── */}
-            <div className="w-[220px] flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
+            {/* ── Sidebar: actions (resizable) ── */}
+            <div
+              className="flex-shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto"
+              style={{ width: sidebarWidth }}
+            >
               <div className="px-3 pt-4 pb-4 flex flex-col">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-1 pb-1.5">Actions</p>
                 {TYPE_OPTIONS.map((opt) => (
@@ -1600,22 +1557,15 @@ export function WorkflowBuilderV2() {
                   </span>
                   Condition
                 </button>
-
-                <div className="border-t border-border my-2" />
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-1 pb-1.5">Templates</p>
-                {STEP_TEMPLATES.map((tpl) => (
-                  <button
-                    key={tpl.id}
-                    type="button"
-                    onClick={() => handleLoadTemplate(tpl)}
-                    className="w-full flex flex-col items-start gap-0.5 px-3 py-2 rounded-md hover:bg-muted transition-colors text-left"
-                  >
-                    <span className="text-sm font-medium text-foreground leading-snug">{tpl.name}</span>
-                    <span className="text-[11px] text-muted-foreground leading-snug">{tpl.description}</span>
-                  </button>
-                ))}
               </div>
             </div>
+
+            {/* Drag handle to resize the actions sidebar */}
+            <div
+              onMouseDown={handleSidebarResizeStart}
+              title="Drag to resize"
+              className="w-1 flex-shrink-0 cursor-col-resize bg-transparent hover:bg-primary/40 transition-colors"
+            />
 
             {/* ── Center: Steps timeline ── */}
             <div className="flex-1 min-w-0 overflow-y-auto px-6 py-6 space-y-5">
