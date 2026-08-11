@@ -63,4 +63,20 @@ describe("resolveStepSendCount", () => {
     const filters: FilterRule[] = [{ field: "listingStatus", operator: "=", value: "Submitted", logic: "and" } as unknown as FilterRule];
     expect(resolveStepSendCount(emailStep({ sendMode: "per-listing" }), noListing, filters)).toBe(0);
   });
+  it("returns 1 for a per-application step when the contact has a linked application", () => {
+    const withApp = { ...contact, linkedApplicationId: "app-001" } as unknown as Contact;
+    expect(resolveStepSendCount(emailStep({ sendMode: "per-application" }), withApp, noFilters)).toBe(1);
+  });
+  it("returns 0 for a per-application step when the contact has no linked application", () => {
+    expect(resolveStepSendCount(emailStep({ sendMode: "per-application" }), contact, noFilters)).toBe(0);
+  });
+});
+
+describe("effectiveSendMode with per-application", () => {
+  it("honors an explicit per-application choice on a contact-only step", () => {
+    expect(effectiveSendMode(emailStep({ sendMode: "per-application" }))).toBe("per-application");
+  });
+  it("still forces per-listing when a listing token is present, overriding per-application", () => {
+    expect(effectiveSendMode(emailStep({ body: "<p>{{listing.name}}</p>", sendMode: "per-application" }))).toBe("per-listing");
+  });
 });

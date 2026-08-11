@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
-import { Mail, MessageSquare, Phone, Clock, Voicemail } from "lucide-react";
+import { Mail, MessageSquare, Phone, Clock, Voicemail, AlertTriangle } from "lucide-react";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useAppData } from "../../contexts/AppDataContext";
-import { hasListingToken, effectiveSendMode } from "../../lib/workflowSendScope";
+import { hasListingToken, effectiveSendMode, type SendMode } from "../../lib/workflowSendScope";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ export interface StepDraft {
   note?: string;
   reminderDaysBefore?: number;
   /** CRM-700: "once" per contact vs "per-listing". Forced to per-listing when the template uses a {{listing.*}} token. */
-  sendMode?: "once" | "per-listing";
+  sendMode?: "once" | "per-listing" | "per-application";
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -157,50 +157,6 @@ export function StepConfigLeft({
 
   return (
     <div className="space-y-5">
-      {/* Send scope (email & SMS) — CRM-700 */}
-      {(draft.actionType === "email" || draft.actionType === "sms") && (() => {
-        const forced = hasListingToken(draft);
-        const mode = effectiveSendMode(draft);
-        return (
-          <div>
-            <FieldLabel>Send to</FieldLabel>
-            <div className="inline-flex rounded-lg border border-input bg-background p-0.5">
-              <button
-                type="button"
-                disabled={forced}
-                onClick={() => onChange({ sendMode: "once" })}
-                aria-pressed={mode === "once"}
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  mode === "once" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                } ${forced ? "opacity-40 cursor-not-allowed" : ""}`}
-              >
-                Once per contact
-              </button>
-              <button
-                type="button"
-                onClick={() => onChange({ sendMode: "per-listing" })}
-                aria-pressed={mode === "per-listing"}
-                className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
-                  mode === "per-listing" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                One per listing
-              </button>
-            </div>
-            {forced ? (
-              <p className="text-xs text-muted-foreground mt-1.5">
-                This template uses listing details (e.g. <code>{"{{listing.name}}"}</code>), so it must be sent once per
-                listing — the CRM can't know which listing to fill in for a single email.
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-1.5">
-                A contact with multiple listings receives one email per listing when set to "One per listing."
-              </p>
-            )}
-          </div>
-        );
-      })()}
-
       {/* Sender Identity (email only) */}
       {draft.actionType === "email" && (
         <div>
@@ -263,6 +219,46 @@ export function StepConfigLeft({
           />
         </div>
       )}
+
+      {/* Send scope (email & SMS) — kept at the bottom and highlighted: the wrong
+          choice fans a step out into duplicate sends and can spam the client. */}
+      {(draft.actionType === "email" || draft.actionType === "sms") && (() => {
+        const forced = hasListingToken(draft);
+        const mode = effectiveSendMode(draft);
+        const description = forced
+          ? "This template uses listing details, so it must be sent once per listing — the CRM can't know which listing to fill in for a single send."
+          : mode === "once"
+            ? "Sends a single message per contact. Use for general messages that don't reference a specific listing or application."
+            : mode === "per-listing"
+              ? "Sends one message per matching listing — a contact with N listings receives N. Only use when the message references listing details."
+              : "Sends one message per application — a contact with N applications receives N. Only use when the message references application details.";
+        return (
+          <div className="rounded-lg border border-amber-300 bg-amber-50/60 p-3.5">
+            <FieldLabel>Send to</FieldLabel>
+            <Select
+              value={mode}
+              onValueChange={(v) => onChange({ sendMode: v as SendMode })}
+              disabled={forced}
+            >
+              <SelectTrigger className="w-full border-amber-300 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="once">Once per contact</SelectItem>
+                <SelectItem value="per-listing">One per listing</SelectItem>
+                <SelectItem value="per-application">One per application</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="mt-2 flex items-start gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 leading-relaxed">
+                {description}{" "}
+                <span className="font-medium">Choosing the wrong option can send duplicate messages and spam the client.</span>
+              </p>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

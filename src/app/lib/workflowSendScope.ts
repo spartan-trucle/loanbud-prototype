@@ -2,7 +2,7 @@ import type { Contact, FilterRule, WorkflowStep } from "../types";
 import { extractPlaceholders } from "../components/email-workflows/settings/placeholderCatalog";
 import { getMatchedListings } from "./segmentUtils";
 
-export type SendMode = "once" | "per-listing";
+export type SendMode = "once" | "per-listing" | "per-application";
 
 /** Minimal shape shared by a persisted WorkflowStep and the builder's StepDraft. */
 export type SendableLike = Pick<WorkflowStep, "actionType" | "subject" | "body" | "message" | "sendMode">;
@@ -39,15 +39,18 @@ export function effectiveSendMode(step: SendableLike): SendMode {
 }
 
 /**
- * How many sends a step produces for one enrolled contact, re-hydrated from the
- * contact's currently-matching listings at call time. Returns 0 for a per-listing
- * step when the contact has no matching listings.
+ * How many sends a step produces for one enrolled contact, re-hydrated at call time.
+ * - "once": exactly 1.
+ * - "per-listing": one per currently-matching listing (0 if none match).
+ * - "per-application": one per linked application (0 if the contact has none).
  */
 export function resolveStepSendCount(
   step: SendableLike,
   contact: Contact,
   segmentFilters: FilterRule[],
 ): number {
-  if (effectiveSendMode(step) === "once") return 1;
-  return getMatchedListings(contact, segmentFilters).length;
+  const mode = effectiveSendMode(step);
+  if (mode === "per-listing") return getMatchedListings(contact, segmentFilters).length;
+  if (mode === "per-application") return contact.linkedApplicationId ? 1 : 0;
+  return 1;
 }
