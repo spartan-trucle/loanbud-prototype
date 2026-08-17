@@ -34,6 +34,7 @@ import {
 import { useAppData } from "../../contexts/AppDataContext";
 import type { WorkflowStep } from "../../types";
 import { computeDayOffsets } from "../../lib/workflowUtils";
+import type { WorkflowDimension } from "../../lib/workflowDimension";
 import {
   StepTypeIcon,
   StepConfigFields,
@@ -48,6 +49,13 @@ import {
   type StepDraft,
 } from "./StepConfigForm";
 import { StepSummary } from "./StepSummary";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -529,6 +537,7 @@ export function WorkflowBuilder() {
   const [wizardStep, setWizardStep] = useState(id || preselectedSegmentId ? 1 : 0);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [dimension, setDimension] = useState<WorkflowDimension>("CONTACT");
   const [editingName, setEditingName] = useState(false);
   const [selectedSegmentId, setSelectedSegmentId] =
     useState(preselectedSegmentId);
@@ -568,6 +577,7 @@ export function WorkflowBuilder() {
       if (wf) {
         setName(wf.name);
         setDescription(wf.description ?? "");
+        setDimension(wf.dimension ?? "CONTACT");
         setSelectedSegmentId(wf.segmentId);
         const seeded = computeDayOffsets(
           [...wf.steps].sort((a, b) => a.order - b.order),
@@ -735,6 +745,7 @@ export function WorkflowBuilder() {
       handleUpdateWorkflow(id, {
         name,
         description,
+        dimension,
         segmentId: selectedSegmentId,
         segmentName,
         steps: sortedSteps,
@@ -743,6 +754,7 @@ export function WorkflowBuilder() {
       handleCreateWorkflow({
         name,
         description,
+        dimension,
         segmentId: selectedSegmentId,
         segmentName,
         status: "draft",
@@ -887,6 +899,26 @@ export function WorkflowBuilder() {
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Optional — describe the purpose of this flow"
                   />
+                </div>
+                <div className="space-y-1.5">
+                  <FieldLabel>Runs per (enrollment object)</FieldLabel>
+                  <Select value={dimension} onValueChange={(v) => setDimension(v as WorkflowDimension)}>
+                    <SelectTrigger className="w-full border-gray-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CONTACT">Contact — one run per contact</SelectItem>
+                      <SelectItem value="LISTING">Listing — one run per matching listing</SelectItem>
+                      <SelectItem value="APPLICATION">Application — one run per application</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {dimension === "CONTACT"
+                      ? "The contact is enrolled once, no matter how many listings or applications they have."
+                      : dimension === "LISTING"
+                        ? "A contact with N matching listings is enrolled N times — one run per listing."
+                        : "A contact with N applications is enrolled N times — one run per application."}
+                  </p>
                 </div>
               </div>
 
