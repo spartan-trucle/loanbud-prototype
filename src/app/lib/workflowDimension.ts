@@ -51,11 +51,7 @@ export function resolveRunLabel(
   }
   if (dimension === "APPLICATION") {
     const a = applications.find((x) => x.id === objectId);
-    if (a && objectId) {
-      const suffix = objectId.replace("app-", "");
-      return { label: `#APP-${suffix}`, sublabel: a.stage };
-    }
-    return { label: "Application" };
+    return a ? { label: `#${a.applicationNumber}`, sublabel: a.stage } : { label: "Application" };
   }
   return { label: `${contact.firstName} ${contact.lastName}` };
 }

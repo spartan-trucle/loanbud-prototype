@@ -54,6 +54,6 @@ describe("resolveRunLabel", () => {
     expect(resolveRunLabel("LISTING", "lst-1-2", contact, apps)).toEqual({ label: "SBA 7(a)", sublabel: "New" });
   });
   it("labels an APPLICATION run with the application number + stage", () => {
-    expect(resolveRunLabel("APPLICATION", "app-001", contact, apps)).toEqual({ label: "#APP-001", sublabel: "Underwriting" });
+    expect(resolveRunLabel("APPLICATION", "app-001", contact, apps)).toEqual({ label: "#00001", sublabel: "Underwriting" });
   });
 });
