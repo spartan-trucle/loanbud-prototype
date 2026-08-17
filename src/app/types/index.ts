@@ -118,6 +118,8 @@ export interface Contact {
   state?: string;
   zipCode?: string;
   linkedApplicationId?: string;
+  /** V2: all applications associated with this contact. Falls back to linkedApplicationId when absent. */
+  applicationIds?: string[];
   companies?: string[];
   // Per-channel opt-out
   emailOptOut?: ChannelOptOut;
@@ -324,6 +326,8 @@ export interface Workflow {
   // ── V2 fields ────────────────────────────────────────────────────────────────
   /** When true, this workflow was duplicated from another; original id stored here */
   duplicatedFromId?: string;
+  /** HubSpot-style enrollment dimension: how many runs each contact produces. Defaults to "CONTACT". */
+  dimension?: "CONTACT" | "APPLICATION" | "LISTING";
 }
 
 export interface WorkflowStepProgress {
@@ -345,6 +349,8 @@ export interface WorkflowEnrollment {
   id: string;
   workflowId: string;
   contactId: string;
+  /** The run's dimension object id — listing id (LISTING) or application id (APPLICATION); undefined for CONTACT. */
+  objectId?: string;
   startDate: Date;
   status: "active" | "completed" | "paused";
   stepProgress: WorkflowStepProgress[];
