@@ -8,8 +8,9 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "../ui/dialog";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "../ui/alert-dialog";
 import { useAppData } from "../../contexts/AppDataContext";
-import type { Contact, WorkflowEnrollment, WorkflowStep } from "../../types";
+import type { Application, Contact, WorkflowEnrollment, WorkflowStep } from "../../types";
 import { CURRENT_USER } from "../../config/featureFlags";
+import { resolveRunLabel, type WorkflowDimension } from "../../lib/workflowDimension";
 
 const CARD_DRAG_TYPE = "WORKFLOW_CONTACT_CARD";
 
@@ -263,6 +264,8 @@ function ContactCard({
   scheduledDate,
   enrollmentStatus,
   onCardClick,
+  runLabel,
+  runSublabel,
 }: {
   contact: Contact;
   enrollmentId: string;
@@ -271,6 +274,8 @@ function ContactCard({
   scheduledDate: Date | null;
   enrollmentStatus: string;
   onCardClick: () => void;
+  runLabel: string;
+  runSublabel?: string;
 }) {
   const avatarClass = USER_TYPE_AVATAR[contact.userType] ?? "bg-gray-100 text-gray-700";
   const isCompleted = columnId === "completed";
@@ -296,8 +301,8 @@ function ContactCard({
 
   const { label: statusLabel, dotClass } = getCardStatus({ enrollmentStatus, cantSend, isAutoStep, scheduledDate });
 
-  // One enrollment per contact (CRM-700) — show the contact's primary listing
-  const resolvedListing = { name: contact.listingName, status: contact.listingStatus };
+  // Show the run's dimension object (CRM-700) — contact, listing, or application depending on workflow.dimension
+  const resolvedListing = { name: runLabel, status: runSublabel ?? "" };
 
   return (
     <div
@@ -344,9 +349,11 @@ function ContactCard({
                 <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-xs text-foreground truncate" title={resolvedListing.name}>{resolvedListing.name}</span>
-                    <span className={`flex-shrink-0 inline-block text-xs px-1.5 py-0.5 rounded font-medium leading-none ${LISTING_STATUS_STYLES[resolvedListing.status] ?? "bg-gray-100 text-gray-600"}`}>
-                      {resolvedListing.status}
-                    </span>
+                    {resolvedListing.status && (
+                      <span className={`flex-shrink-0 inline-block text-xs px-1.5 py-0.5 rounded font-medium leading-none ${LISTING_STATUS_STYLES[resolvedListing.status] ?? "bg-gray-100 text-gray-600"}`}>
+                        {resolvedListing.status}
+                      </span>
+                    )}
                   </div>
                   {(contact.listings?.length ?? 1) > 1 && (
                     <span className="text-xs text-muted-foreground/60">
@@ -374,6 +381,8 @@ function KanbanColumn({
   currentStep,
   handleDrop,
   handleCardClick,
+  dimension,
+  applications,
 }: {
   colId: string;
   label: string;
@@ -382,6 +391,8 @@ function KanbanColumn({
   currentStep: WorkflowStep | null;
   handleDrop: (enrollmentId: string, targetStepId: string) => void;
   handleCardClick: (contactId: string, enrollmentId: string) => void;
+  dimension: WorkflowDimension;
+  applications: Application[];
 }) {
   const [{ isOver, canDrop }, dropRef] = useDrop<DragItem, unknown, { isOver: boolean; canDrop: boolean }>({
     accept: CARD_DRAG_TYPE,
@@ -422,6 +433,7 @@ function KanbanColumn({
           const scheduledDate = currentStep
             ? new Date(enrollment.startDate.getTime() + currentStep.dayOffset * 86_400_000)
             : null;
+          const run = resolveRunLabel(dimension, enrollment.objectId, contact, applications);
           return (
             <ContactCard
               key={enrollment.id}
@@ -432,6 +444,8 @@ function KanbanColumn({
               scheduledDate={scheduledDate}
               enrollmentStatus={enrollment.status}
               onCardClick={() => handleCardClick(contact.id, enrollment.id)}
+              runLabel={run.label}
+              runSublabel={run.sublabel}
             />
           );
         })}
@@ -453,7 +467,7 @@ export function WorkflowBoard() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
-  const { workflows, workflowEnrollments, contacts, segments, handleActivateWorkflow, handleAdvanceStep, handleMoveToStep, handleUpdateWorkflow, handleDeleteWorkflow, handleSkipStep, handleSetEnrollmentStatus, handleBulkSkipSteps, handleBulkSetEnrollmentStatus } = useAppData();
+  const { workflows, workflowEnrollments, contacts, segments, applications, handleActivateWorkflow, handleAdvanceStep, handleMoveToStep, handleUpdateWorkflow, handleDeleteWorkflow, handleSkipStep, handleSetEnrollmentStatus, handleBulkSkipSteps, handleBulkSetEnrollmentStatus } = useAppData();
 
   const navState = location.state as { openContactId?: string; openEnrollmentId?: string } | null;
 
@@ -1143,6 +1157,8 @@ export function WorkflowBoard() {
                       currentStep={step}
                       handleDrop={handleDrop}
                       handleCardClick={(cId, eId) => { setSelectedContactId(cId); setSelectedEnrollmentId(eId); }}
+                      dimension={workflow.dimension ?? "CONTACT"}
+                      applications={applications}
                     />
                   );
                 },
