@@ -51,7 +51,7 @@ export function resolveRunLabel(
   }
   if (dimension === "APPLICATION") {
     const a = applications.find((x) => x.id === objectId);
-    return a ? { label: `#${a.applicationNumber}`, sublabel: a.stage } : { label: "Application" };
+    return a ? { label: `#${a.applicationNumber}`, sublabel: a.stage } : { label: objectId ?? "Application" };
   }
   return { label: `${contact.firstName} ${contact.lastName}` };
 }

@@ -1146,6 +1146,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           stepProgress: workflow.steps.map((s: WorkflowStep) => ({ stepId: s.id, status: "pending" as const })),
         }));
     });
+    const enrolledContactSet = new Set(newEnrollments.map((e) => e.contactId));
+    const skippedContacts = entries.filter((e) => !enrolledContactSet.has(e.contactId)).length;
+    if (skippedContacts > 0) {
+      toast.info(`${skippedContacts} contact${skippedContacts > 1 ? "s" : ""} skipped — already enrolled`);
+    }
     if (newEnrollments.length === 0) return;
     const updatedEnrollments = [...workflowEnrollments, ...newEnrollments];
     const updatedWorkflows = workflows.map((wf) =>
@@ -1233,11 +1238,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
     const segmentFilters: FilterRule[] = segment?.filters ?? [];
     const dimension = workflow.dimension ?? "CONTACT";
-    const enrolledKeys = new Set(
-      workflowEnrollments
-        .filter((e) => e.workflowId === workflowId)
-        .map((e) => `${e.contactId}::${e.objectId ?? ""}`),
-    );
 
     // Pick up to 8 not-yet-enrolled contacts that produce at least one run
     const available = contacts.filter(
@@ -1250,9 +1250,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       const startDate = new Date(now.getTime() - idx * 2 * 24 * 60 * 60 * 1000);
       const stepProgress = generateMockProgress(workflow.steps, idx);
       const allDone = stepProgress.every((p) => p.status === "done" || p.status === "skipped");
-      return getRunObjects(contact, dimension, segmentFilters)
-        .filter((run) => !enrolledKeys.has(`${contact.id}::${run.objectId ?? ""}`))
-        .map((run, j) => ({
+      return getRunObjects(contact, dimension, segmentFilters).map((run, j) => ({
           id: `enroll-${workflowId}-${contact.id}-${run.objectId ?? "c"}-${Date.now() + idx + j}`,
           workflowId,
           contactId: contact.id,
