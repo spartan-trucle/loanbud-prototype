@@ -1,123 +1,71 @@
 ---
 name: LoanBudCRM TypeScript types reference
-description: All key interfaces and union types from src/app/types/index.ts and campaign/types.ts — updated Apr 2026
+description: Map of src/app/types/index.ts — what lives where, and the types worth knowing before you edit — updated Aug 2026
 type: project
 ---
 
-**Sources:** `src/app/types/index.ts` and `src/app/components/email-workflows/campaign/types.ts`
+**Source of truth:** `src/app/types/index.ts` (single file, ~760 lines). This note is a
+map, not a copy — read the file for exact shapes. Earlier versions of this doc
+transcribed the interfaces and drifted out of date; don't reintroduce that.
 
-## Navigation types
+`src/app/components/email-workflows/campaign/types.ts` no longer exists — everything
+is in the one types file.
 
-```ts
-type MainSection = "applications" | "business-acquisition" | "crm" | "email-workflows" | "users" | "automations" | "questionnaires" | "configurations"
-type CRMView = "contacts" | "companies" | "leads" | "deals" | "tickets" | "orders" | "listings" | "segments-lists" | "inbox" | "calls" | "meetings" | "tasks" | "playbooks" | "message-templates" | "snippets"
-type EmailWorkflowView = "overview" | "compose" | "campaigns" | "user-segments" | "flow-builder" | "templates" | "history"
-type View = MainSection | CRMView | EmailWorkflowView
+## What's in there
 
-interface IconNavItem { id: MainSection; label: string; icon: React.ElementType; tooltip: string; hasSubMenu?: boolean }
-interface CRMSubItem { id: CRMView; label: string; dividerAfter?: boolean; icon?: React.ElementType; tooltip?: string }
-interface EmailWorkflowSubItem { id: EmailWorkflowView; label: string; dividerAfter?: boolean }
-```
+**Navigation** — `MainSection`, `CRMView`, `EmailWorkflowView`, `View`,
+`AppSidebarSection` / `AppSidebarItem` / `AppSidebarSubItem`, `IconNavItem`,
+`CRMSubItem`, `EmailWorkflowSubItem`
 
-## Core data interfaces
+**CRM core** — `Contact`, `ContactStatus`, `NewContactInput`, `ContactImportSource`,
+`Company`, `Listing`, `ListingRecord`, `ListingStatus`, `ChannelOptOut`,
+`ContactActivityRecord`
 
-```ts
-interface Contact {
-  id: string; firstName: string; lastName: string; email: string; phone: string
-  listingName: string; listingStatus: "New" | "Draft" | "Submitted" | "On Hold" | "Declined"
-  createAt: Date; userType: "Broker" | "Lender" | "Partner"
-  optedOut: boolean; openReminders: number
-}
+**Attribution & campaigns** — `TrafficSourceId`, `Campaign`, `CampaignStatus`,
+`LeadFormPayload`, `LeadIngestResult`, plus the legacy `AttributionNode` /
+`AttributionNodeKind`
 
-interface EmailRecord {
-  id: string; contactId: string; contactName: string; subject: string
-  senderIdentity: string; status: "Sent" | "Delivered" | "Opened"
-  sequenceDay: number; sentAt: Date
-}
+**Custom fields** — `CustomFieldDefinition`, `CustomFieldType`
 
-interface Task {
-  id: string; contactId: string; contactName: string; contactPhone: string
-  listingStatus: string; callObjective: string; voicemailScript: string
-  dueDay: number; scheduledFor: Date; status: "pending" | "completed"
-  disposition?: "Answered" | "VM Left" | "No Answer" | "Not Needed" | string
-}
+**Tasks & workflows** — `Task`, `TaskItem`, `Workflow`, `WorkflowStep`,
+`WorkflowEnrollment`, `WorkflowStepProgress`, `CustomWorkflowStep`, `OutcomeRule`,
+`OutcomeAction`, `OutcomeFollowup`, `LoGroup`
 
-interface Segment {
-  id: string; name: string; contactCount: number; status: "Active" | "Inactive"
-  lastUpdatedAt: Date; createdBy: string; createdAt: Date; filters: unknown[]
-}
+**Segments & filters** — `Segment`, `SavedSegment`, `FilterRule`, `FilterGroup`,
+`FilterRuleV2`, `FilterGroupV2`, `FilterFieldV2`, `FilterOperatorV2`
 
-interface TaskItem {
-  disposition: string
-  id: string; contactName: string; contactId: string; contactStatus: string
-  taskType: string; source: string; sourceType: "campaign" | "flow" | "manual"
-  dueDate: Date; assignee: string; status: "pending" | "completed" | "overdue"
-  ruleId?: string; ruleName?: string; triggerContext?: string
-  notes?: string; completedAt?: Date; outcome?: string
-}
-```
+**Content library** — `AdminEmailTemplate`, `TemplateFolder`, `SmsTemplate`,
+`SmsTemplateCategory`, `VoicemailScript`, `VoicemailScriptType`, `VoicemailSettings`,
+`VoicemailCategory`, `SenderIdentity`, `SenderIdentityType`, `UnlayerDesign`
 
-## Application types (new)
+**Other** — `EmailRecord`, `Notification`, `NotificationPreferences`, `Application`,
+`ApplicationStage`, `LoanPurpose`, `BusinessAcquisitionRecord`,
+`BusinessAcquisitionStage`, `AcquisitionType`
 
-```ts
-type ApplicationStage = "Leads" | "Prequalification Review" | "Completed Initial Application" | "Submitted to Underwriting" | "Requested Prepaid Docs" | "On Hold" | "Withdrawn" | "Funded"
-type LoanPurpose = "Start a Business" | "Buy Commercial Real Estate" | "Debt Refinance" | "Equipment Purchase" | "Working Capital"
+## Worth knowing before you edit
 
-interface Application {
-  id: string; applicationNumber: string; stage: ApplicationStage; loanPurpose: LoanPurpose
-  branchName: string; loanOfficerName: string; assigneeName: string
-  loanAmount: number; createdAt: Date; updatedAt: Date
-}
-```
+**`TrafficSourceId` is a closed enum on purpose.** It is the ten HubSpot contact
+traffic sources, owned by code and deliberately not editable in Settings. What
+marketing controls is the **campaign**, not the source list. Adding a member here is
+a product decision, not a config change.
 
-## Business acquisition types (new)
+**`Contact` carries three parallel source fields** — don't collapse them:
+- `attributionSource` (via `leadSource`) — which *system* created the record; also
+  drives ownership/permission checks in the real backend, so it is never user-editable
+- `originalTrafficSource` + `sourceDetail1/2` — where the lead *actually* came from
+- `campaignId` — the campaign object it belongs to
 
-```ts
-type BusinessAcquisitionStage = "New Lead" | "Qualified" | "Proposal Sent" | "Negotiation" | "Closed Won" | "Closed Lost" | "On Hold"
-type AcquisitionType = "Direct Referral" | "Cold Outreach" | "Partnership" | "Inbound Inquiry" | "Broker Network"
+`resolveAttribution()` and `resolveCampaignId()` fall back to the legacy
+`attributionNodeId` when the flat fields are absent, which is why the seed data was
+never rewritten.
 
-interface BusinessAcquisitionRecord {
-  id: string; recordNumber: string; stage: BusinessAcquisitionStage; acquisitionType: AcquisitionType
-  branchName: string; agentName: string; assigneeName: string
-  dealValue: number; createdAt: Date; updatedAt: Date
-}
-```
+**`Contact.customFields`** is `Record<string, string>` keyed by
+`CustomFieldDefinition.key`. Definitions decide rendering and visibility; the contact
+only stores answers. Unknown keys arriving from a form become **hidden**
+auto-discovered definitions.
 
-## Campaign types (campaign/types.ts)
+**`SegmentV2` is now an alias of `Segment`.** `segmentType` and `snapshotContactIds`
+moved onto `Segment` itself when the V1/V2 split was removed. Prefer `Segment`.
 
-```ts
-type CampaignStatus = "draft" | "scheduled" | "sent"
-type BulkActionType = "create-tasks" | "move-segment" | "remove-segment" | "exclude"
-
-interface Campaign {
-  id: string; name: string; segmentId: string; segmentName: string
-  templateId: string; templateName: string; status: CampaignStatus
-  scheduledFor?: Date; sentAt?: Date; recipientCount: number
-  openRate?: number; followUpTasks: FollowUpTask[]
-}
-
-interface FollowUpTask { daysAfter: number; taskType: string; description: string }
-
-interface FilterRule {
-  field: "listingStatus" | "userType"; operator: "=" | "!="; value: string; logic: "and" | "or"
-}
-
-interface FilterGroup { id: string; filters: FilterRule[]; connectorAfter: "and" | "or" }
-interface SavedSegment { id: string; name: string; description: string; filters: FilterRule[]; createdAt: Date }
-
-interface EmailTemplate {
-  id: string; name: string; subject: string; body: string
-  senderType: "brand" | "agent"; category: string; createdAt: Date
-}
-
-interface CampaignDetailContact {
-  id: string; name: string; email: string; status: string
-  engagement: "opened" | "clicked" | "delivered" | "no-response"
-  stillInSegment: boolean; driftReason?: string; lastUpdated: Date
-}
-
-interface CampaignMetrics {
-  id: string; name: string; segmentName: string; sentAt: Date; recipientCount: number
-  deliveryRate: number; openRate: number; clickRate: number; noResponseCount: number
-}
-```
+**`Listing` vs `ListingRecord`** — `Listing` is the small shape embedded in
+`Contact.listings`; `ListingRecord` is the standalone entity behind `/crm/listings`.

@@ -57,9 +57,7 @@ export interface AppSidebarSubItem {
   label: string;
   route: string;
   icon?: React.ElementType;
-  /** When true, this item is greyed out in V1 and only active in V2 */
-  v2Only?: boolean;
-  /** V2 (RFC-008): dynamic count badge (e.g. open tasks). 0/undefined hides it. */
+  /** Dynamic count badge (e.g. open tasks). 0/undefined hides it. */
   badgeCount?: number;
 }
 
@@ -126,7 +124,160 @@ export interface Contact {
   isDoNotCall?: boolean;
   /** V2 (RFC-009): attribution taxonomy classification — id of the deepest AttributionNode this contact resolves to. */
   attributionNodeId?: string;
+  /** Mirrors `contacts.lead_source` — the ingest channel that first created this contact. */
+  leadSource?: string;
+  /** Flat attribution: the closed-enum traffic source. Falls back to the taxonomy path when absent. */
+  originalTrafficSource?: TrafficSourceId;
+  /** Drill-down 1 (utm_source / platform). */
+  sourceDetail1?: string;
+  /** Drill-down 2 (utm_content / utm_term, ad set, keyword). */
+  sourceDetail2?: string;
+  /** Campaign this contact is attributed to — a first-class object, not a taxonomy level. */
+  campaignId?: string;
+  /** Answers to admin-defined custom fields, keyed by CustomFieldDefinition.key. */
+  customFields?: Record<string, string>;
+  /** Mirrors `contacts.status` — lifecycle state used by the contact list Status filter. */
+  status?: ContactStatus;
+  /** Record visibility. The CRM only exposes PUBLIC today; kept as a field for parity. */
+  visibility?: ContactVisibility;
+  /** Id of the Company acting as this contact's office. */
+  officeCompanyId?: string;
 }
+
+/** Contact lifecycle status (mirrors the CRM's `contacts.status` filter values). */
+export type ContactStatus = "Active" | "Inactive" | "Unqualified";
+
+/** Record visibility. The CRM ships a single option today, same as the real header. */
+export type ContactVisibility = "Public";
+
+/**
+ * The closed set of traffic sources — code-owned, never editable in Settings.
+ *
+ * Deliberately a subset of HubSpot's ten: these are the channels LoanBud can attribute
+ * today (referrals, offline/untracked forms, our own email) plus the two paid channels
+ * being run now. The web-tracked ones — Organic search, Organic social, Direct traffic,
+ * AI referrals, Other campaigns — need website analytics that is not connected yet, so
+ * leads that would belong to them currently land in `offline-sources`.
+ *
+ * To add one back: add the member here, add a row to TRAFFIC_SOURCES in
+ * data/trafficSources.ts, and teach trafficSourceFromUtm() how to reach it.
+ */
+export type TrafficSourceId =
+  | "referrals"
+  | "offline-sources"
+  | "paid-social"
+  | "paid-search"
+  | "email-marketing";
+
+export type CampaignStatus = "Draft" | "Active" | "Paused" | "Completed";
+
+/**
+ * A marketing campaign — its own object, keyed by `utmCampaign`. Contacts point at
+ * it, so one campaign running across several channels stays a single row.
+ */
+export interface Campaign {
+  id: string;
+  name: string;
+  /** The `utm_campaign` value that links inbound leads to this campaign. */
+  utmCampaign: string;
+  /** Primary channel; a campaign can still receive contacts from other sources. */
+  channel: TrafficSourceId;
+  status: CampaignStatus;
+  startDate?: Date;
+  endDate?: Date;
+  description?: string;
+  createdAt: Date;
+}
+
+/** What a marketing form posts to the CRM's lead-ingest endpoint. */
+export interface LeadFormPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  /** The form's own name, recorded as the lead source. */
+  formName?: string;
+  /** Questionnaire answers keyed by field key; unknown keys are auto-discovered. */
+  answers: Record<string, string>;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmContent?: string;
+  utmTerm?: string;
+}
+
+/** What the CRM did with an ingested form submission — drives the demo screen's result panel. */
+export interface LeadIngestResult {
+  contact: Contact;
+  trafficSource: TrafficSourceId;
+  campaignId: string | null;
+  campaignCreated: boolean;
+  discoveredKeys: string[];
+}
+
+/** A company record — mirrors the CRM's companies list. */
+export interface Company {
+  id: string;
+  name: string;
+  companyType: string;
+  /** Contact id of the primary contact. */
+  primaryContactId?: string;
+  tags?: string[];
+  /** Office fields, shown when this company acts as a contact's office. */
+  brokerage?: string;
+  officeId?: string;
+  applyLink?: string;
+  /** System field: which system created the record. */
+  attributionSource?: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+/** A business listing — mirrors the CRM's listings list. */
+export interface ListingRecord {
+  id: string;
+  name: string;
+  askingPrice: number;
+  status: ListingStatus;
+  industry: string;
+  location: string;
+  /** Contact id of the broker or seller. */
+  brokerContactId?: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export type CustomFieldType = "text" | "number" | "date" | "select";
+
+/**
+ * An admin-defined field. Marketing forms can post unknown keys; those arrive as
+ * auto-discovered definitions that stay hidden until someone turns them on.
+ */
+export interface CustomFieldDefinition {
+  id: string;
+  /** Stable key sent by forms and used in Contact.customFields. */
+  key: string;
+  label: string;
+  type: CustomFieldType;
+  /** Options for `select` fields. */
+  options?: string[];
+  /** Which detail section it renders under. */
+  section: string;
+  /** Hidden fields are stored but not shown — the default for auto-discovered keys. */
+  isVisible: boolean;
+  /** Whether the field is offered as a segment filter. */
+  isFilterable: boolean;
+  /** Discovered from an inbound form payload rather than created by an admin. */
+  isAutoDiscovered: boolean;
+  createdAt: Date;
+}
+
+/** Where a bulk contact import originated. Drives the import modal's parsing rules. */
+export type ContactImportSource = "csv" | "bizbuysell";
+
+/** The minimum a caller must supply to create a contact; everything else is defaulted. */
+export type NewContactInput = Partial<Contact> &
+  Pick<Contact, "firstName" | "lastName" | "email">;
 
 /** V2 (RFC-009): one level of the attribution pyramid (Channel > Platform > Campaign > Ad Set > Creative). */
 export type AttributionNodeKind = "channel" | "platform" | "campaign" | "ad_set" | "creative";
@@ -226,6 +377,10 @@ export interface Segment {
   excludeFilters?: FilterRule[];
   includedContactIds?: string[];
   excludedContactIds?: string[];
+  /** Dynamic segments re-evaluate their filters; static ones freeze a contact list. */
+  segmentType?: "dynamic" | "static";
+  /** Populated when segmentType = "static"; contact ids locked at save time. */
+  snapshotContactIds?: string[];
 }
 
 export interface TaskItem {
@@ -302,7 +457,8 @@ export interface WorkflowStep {
   outcomeRules?: OutcomeRule[];
   // ── V2: Conditional (if/else) step fields ────────────────────────────────────
   conditionField?: string;
-  conditionOperator?: "=" | "!=" | "is true" | "is false" | ">" | "<" | ">=" | "<=";
+  /** Same operator vocabulary the segment builder uses — see {@link FilterOperatorV2}. */
+  conditionOperator?: FilterOperatorV2;
   conditionValue?: string;
   ifBranch?: WorkflowStep[];
   elseBranch?: WorkflowStep[];
@@ -559,11 +715,8 @@ export type NotificationPreferences = {
 
 // ── V2: Segment enhancements ──────────────────────────────────────────────────
 
-export interface SegmentV2 extends Segment {
-  segmentType: "dynamic" | "static";
-  /** Populated when segmentType = "static"; contact ids locked at save time */
-  snapshotContactIds?: string[];
-}
+/** @deprecated Its fields now live on {@link Segment}; kept as an alias for call sites. */
+export type SegmentV2 = Segment;
 
 // ── V2: Filter rule extensions ────────────────────────────────────────────────
 

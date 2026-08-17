@@ -12,14 +12,14 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": ".",
+    "noEmit": true,
     "paths": {
-      "@/*": ["src/*"],
-      "@app/*": ["src/app/*"],
-      "@features/*": ["src/app/components/*"],
-      "@ui/*": ["src/app/components/ui/*"],
-      "@types/*": ["src/app/types/*"],
-      "@data/*": ["src/app/data/*"]
+      "@/*": ["./src/*"],
+      "@app/*": ["./src/app/*"],
+      "@features/*": ["./src/app/components/*"],
+      "@ui/*": ["./src/app/components/ui/*"],
+      "@types/*": ["./src/app/types/*"],
+      "@data/*": ["./src/app/data/*"]
     }
   },
   "include": ["src"],

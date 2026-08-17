@@ -1060,7 +1060,7 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
 
 function generateWorkflowSummary(
   steps: WorkflowStep[],
-  workflowName?: string,
+  _workflowName?: string,
   segmentName?: string,
   contactCount?: number,
 ): string {

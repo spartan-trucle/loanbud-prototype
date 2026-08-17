@@ -132,7 +132,7 @@ export function BusinessAcquisitionList() {
     <div className="flex-1 flex flex-col bg-background overflow-auto">
       {/* Header */}
       <div className="border-b border-border bg-card px-8 py-6">
-        <div className="max-w-7xl mx-auto">
+        <div>
         <div className="flex items-center mb-4">
           <h2
             className="text-3xl mr-6"
@@ -194,7 +194,7 @@ export function BusinessAcquisitionList() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-8 py-6">
-        <div className="max-w-7xl mx-auto">
+        <div>
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           <table className="w-full">
             <thead className="bg-muted/50 border-b border-border">

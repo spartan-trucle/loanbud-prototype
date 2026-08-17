@@ -4,61 +4,94 @@ description: How data is stored, seeded, and accessed at runtime — localStorag
 type: project
 ---
 
-**Fact:** All runtime data lives in `localStorage`, seeded from JSON files on first load. There is no backend or API.
+**Fact:** All runtime data lives in `localStorage`, seeded from JSON files on first
+load. There is no backend or API.
 
-`src/app/data/store.ts` is the single source of truth. It exposes a `store` object with typed read/write methods per entity. Components must go through `store` — never import JSON files directly.
+`src/app/data/store.ts` is the single source of truth. It exposes a `store` object with
+typed read/write methods per entity. Components must go through `store` — never import
+JSON files directly.
 
 ## Storage keys (namespace `loanbudcrm:`)
 
+Keys carry a version segment. **Bumping the version resets that entity for every
+existing user** — do it when a seed change must take effect, not otherwise.
+
 | Key | Type |
 |-----|------|
-| `loanbudcrm:contacts` | Contact[] |
-| `loanbudcrm:segments` | Segment[] |
-| `loanbudcrm:taskItems` | TaskItem[] |
-| `loanbudcrm:emailHistory` | EmailRecord[] |
-| `loanbudcrm:tasks` | Task[] |
-| `loanbudcrm:campaigns` | Campaign[] |
-| `loanbudcrm:applications` | Application[] |
-| `loanbudcrm:businessAcquisitions` | BusinessAcquisitionRecord[] |
+| `loanbudcrm:v5:contacts` | Contact[] |
+| `loanbudcrm:v1:companies` | Company[] |
+| `loanbudcrm:v1:listings` | ListingRecord[] |
+| `loanbudcrm:v1:campaigns` | Campaign[] |
+| `loanbudcrm:v1:customFieldDefinitions` | CustomFieldDefinition[] |
+| `loanbudcrm:v2:segments` | Segment[] |
+| `loanbudcrm:taskItems` · `loanbudcrm:tasks` | TaskItem[] · Task[] |
+| `loanbudcrm:v3:emailHistory` | EmailRecord[] |
+| `loanbudcrm:v2:contactActivity` | ContactActivityRecord[] |
+| `loanbudcrm:v5:workflows` · `loanbudcrm:v5:workflowEnrollments` | Workflow[] · WorkflowEnrollment[] |
+| `loanbudcrm:applications` · `loanbudcrm:businessAcquisitions` | Application[] · BusinessAcquisitionRecord[] |
+| `loanbudcrm:v6:adminEmailTemplates` · `loanbudcrm:v1:templateFolders` | AdminEmailTemplate[] · TemplateFolder[] |
+| `loanbudcrm:v2:smsTemplates` · `loanbudcrm:v2:voicemailScripts` · `loanbudcrm:v2:voicemailSettings` | content library |
+| `loanbudcrm:v2:senderIdentities` · `loanbudcrm:v2:smsCategories` · `loanbudcrm:v2:voicemailCategories` | content library |
+| `loanbudcrm:notifications` · `loanbudcrm:v2:notificationPrefs` · `loanbudcrm:loGroups` | misc |
 
 ## Store API (`store.<entity>.read() / write()`)
 
-Each entity has `read(): T[]` and `write(data: T[]): void`. Date strings are revived to Date objects on read.
+Each entity has `read(): T[]` and `write(data: T[]): void`. Date strings are revived
+into `Date` objects on read.
+
+`read<T>(key, fallback, dateFields)` takes the raw imported JSON as `fallback` — do
+**not** cast seeds to the entity type at the call site. Seeds hold ISO strings where
+the type declares `Date`, so a cast would be unsound; `reviveDates` is what makes the
+type true.
 
 ## Seed data files (`src/app/data/`)
 
-contacts.json, segments.json, emailHistory.json, tasks.json, taskItems.json, campaigns.json, applications.json, businessAcquisitions.json
+contacts, companies, listings, campaigns, customFieldDefinitions, segments,
+emailHistory, contactActivity, tasks, taskItems, workflows, workflowEnrollments,
+applications, businessAcquisitions, adminEmailTemplates, templateFolders,
+smsTemplates, voicemailScripts, voicemailSettings, senderIdentities, notifications,
+loGroups
+
+## Attribution model (flat, HubSpot-style)
+
+- `src/app/data/trafficSources.ts` — the **closed** traffic-source enum (code-owned,
+  never editable in the UI), `resolveAttribution(contact)`, and `trafficSourceFromUtm()`
+- `src/app/data/campaignUtils.ts` — `resolveCampaignId(contact)`, `contactsInCampaign()`,
+  `toUtmKey()`
+- Campaigns are their **own object** keyed by `utmCampaign`, not a level in a tree, so
+  one campaign spanning several channels stays a single row
+- Seeded contacts predate these fields; both resolvers fall back to the legacy
+  `attributionNodeId` path in `attributionTaxonomy.ts`, so no seed rewrite was needed
 
 ## State management — AppDataContext
 
-`src/app/contexts/AppDataContext.tsx` (not App.tsx) holds all shared state and exposes:
+`src/app/contexts/AppDataContext.tsx` holds shared state. The content-library domain
+(templates, folders, voicemail, sender identities, categories) lives in
+`src/app/contexts/useContentLibrary.ts` and is **destructured back into the provider**,
+so `useAppData()` exposes one flat shape regardless.
 
-**Data:** `contacts`, `emailHistory`, `tasks`, `taskItems`, `campaigns`, `applications`, `businessAcquisitions`
+**Data:** `contacts`, `companies`, `listings`, `campaigns`, `customFieldDefinitions`,
+`segments`, `emailHistory`, `contactActivity`, `tasks`, `taskItems`, `workflows`,
+`workflowEnrollments`, `applications`, `businessAcquisitions`, plus the content library
 
-**Task handlers:**
-- `handleCompleteTask(taskId, disposition)` — marks completed, updates tasks + taskItems
-- `handleRescheduleTask(taskId, newDate)` — updates scheduledFor/dueDate
-- `handleDeleteTask(taskId)` — removes from tasks + taskItems
-- `handleBulkCompleteTask(taskIds, disposition)`
-- `handleBulkRescheduleTask(taskIds, newDate)`
-- `handleBulkDeleteTask(taskIds)`
+**Contacts:** `handleUpdateContact`, `handleCreateContact`, `handleImportContacts(rows, source)`
+(dedupes on email; `source` is `"csv"` or `"bizbuysell"`)
 
-**Contact handler:**
-- `handleUpdateContact(contactId, updates: Partial<Contact>)` — merges updates and persists
+**Campaigns:** `handleCreateCampaign` (fills `utmCampaign` from the name when blank),
+`handleUpdateCampaign`, `handleDeleteCampaign` (detaches contacts rather than deleting them)
 
-**Task creation:**
-- `handleCreateTask({ contactId, contactName, taskType, dueDate, objective, vmScript?, assignee? })` — creates Task + TaskItem (sourceType: "manual")
+**Custom fields:** `handleCreateCustomField`, `handleUpdateCustomField`, `handleDeleteCustomField`
 
-**Compose / campaign pipeline:**
-- `handleCompose(params)` — creates EmailRecord(s), Task(s), TaskItem(s), and Campaign; params include recipients, subject, senderIdentity, segmentId, campaignName, reminders array
+**Lead ingest:** `handleIngestLeadForm(payload)` — resolves the traffic source from UTM,
+finds-or-creates the campaign, and auto-discovers unknown answer keys as **hidden**
+field definitions. Returns `LeadIngestResult`.
 
-**Hook:** `useAppData()` — access context; throws if used outside AppDataProvider
+**Tasks / workflows / segments / notifications:** the remaining `handle*` families.
 
-## Key internals (store.ts)
+**Hook:** `useAppData()` — throws if used outside `AppDataProvider`.
 
-- `reviveDates<T>(items, dateFields)` — converts date strings back to Date objects after JSON.parse
-- `read<T>(key, fallback, dateFields)` — reads from localStorage or falls back to JSON seed
-- `write<T>(key, data)` — serializes and persists to localStorage
-
-**Why:** Frontend-only prototype; localStorage gives persistence across page reloads without a backend.
-**How to apply:** When adding a new entity — add a key to KEYS in store.ts, add a getter/setter pair, add a JSON seed file, add state + handlers to AppDataContext. Never use local component state for data that needs to persist.
+**Why:** Frontend-only prototype; localStorage gives persistence across reloads
+without a backend.
+**How to apply:** When adding an entity — add a key to `KEYS`, add a read/write pair,
+add a JSON seed, add state + handlers to `AppDataContext` (or a domain hook if the
+slice is self-contained). Never use local component state for data that must persist.

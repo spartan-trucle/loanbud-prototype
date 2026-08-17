@@ -106,7 +106,7 @@ export function UserSegmentsV2() {
 
       {/* Segments Table */}
       <div className="flex-1 overflow-auto px-8 py-6">
-        <div className="max-w-7xl mx-auto">
+        <div>
           <div className="bg-card border border-border rounded-lg w-fit min-w-full">
             <table className="w-full">
               <thead className="bg-muted/50 border-b border-border sticky top-0">
@@ -276,7 +276,7 @@ export function UserSegmentsV2() {
       {/* Footer with CTA */}
       {selectedSegments.length > 0 && (
         <div className="border-t border-border bg-card px-8 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="mx-auto flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
               {selectedSegments.length} segment
               {selectedSegments.length !== 1 ? "s" : ""} selected
