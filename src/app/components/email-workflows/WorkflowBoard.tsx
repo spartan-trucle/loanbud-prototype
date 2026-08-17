@@ -500,6 +500,7 @@ export function WorkflowBoard() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const workflow = workflows.find((wf) => wf.id === id);
+  const dimension = useMemo<WorkflowDimension>(() => workflow?.dimension ?? "CONTACT", [workflow]);
   const myEnrollments = workflowEnrollments.filter((e) => e.workflowId === id);
   const sortedSteps = useMemo(
     () => [...(workflow?.steps ?? [])].sort((a, b) => a.order - b.order),
@@ -708,6 +709,14 @@ export function WorkflowBoard() {
                               <div>
                                 <p className="font-medium text-foreground">{contact.firstName} {contact.lastName}</p>
                                 <p className="text-xs text-muted-foreground">{contact.email}</p>
+                                {enrollment.objectId && contact && (() => {
+                                  const run = resolveRunLabel(dimension, enrollment.objectId, contact, applications);
+                                  return (
+                                    <p className="text-[11px] text-muted-foreground/80">
+                                      {dimension === "APPLICATION" ? "Application" : "Listing"}: {run.label}{run.sublabel ? ` · ${run.sublabel}` : ""}
+                                    </p>
+                                  );
+                                })()}
                               </div>
                             </div>
                           ) : (
@@ -919,6 +928,14 @@ export function WorkflowBoard() {
                                           <div>
                                             <p className="font-medium text-foreground text-xs">{contact.firstName} {contact.lastName}</p>
                                             <p className="text-[11px] text-muted-foreground">{contact.email}</p>
+                                            {enrollment.objectId && contact && (() => {
+                                              const run = resolveRunLabel(dimension, enrollment.objectId, contact, applications);
+                                              return (
+                                                <p className="text-[11px] text-muted-foreground/80">
+                                                  {dimension === "APPLICATION" ? "Application" : "Listing"}: {run.label}{run.sublabel ? ` · ${run.sublabel}` : ""}
+                                                </p>
+                                              );
+                                            })()}
                                           </div>
                                         </div>
                                       ) : (
@@ -1294,6 +1311,14 @@ export function WorkflowBoard() {
                                   {contact.firstName} {contact.lastName}
                                 </button>
                                 <p className="text-xs text-muted-foreground">{contact.email}</p>
+                                {enrollment.objectId && contact && (() => {
+                                  const run = resolveRunLabel(dimension, enrollment.objectId, contact, applications);
+                                  return (
+                                    <p className="text-[11px] text-muted-foreground/80">
+                                      {dimension === "APPLICATION" ? "Application" : "Listing"}: {run.label}{run.sublabel ? ` · ${run.sublabel}` : ""}
+                                    </p>
+                                  );
+                                })()}
                               </div>
                             </div>
                           ) : (
