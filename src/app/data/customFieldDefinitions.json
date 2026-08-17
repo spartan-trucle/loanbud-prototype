@@ -1,0 +1,82 @@
+[
+  {
+    "id": "cfd-funding-purpose",
+    "key": "funding_purpose",
+    "label": "Funding purpose",
+    "type": "select",
+    "options": ["Working capital", "Equipment", "Acquisition", "Refinance", "Real estate"],
+    "section": "Questionnaire",
+    "isVisible": true,
+    "isFilterable": true,
+    "isAutoDiscovered": false,
+    "createdAt": "2026-06-01T00:00:00.000Z"
+  },
+  {
+    "id": "cfd-budget-range",
+    "key": "budget_range",
+    "label": "Budget range",
+    "type": "select",
+    "options": ["Under $100k", "$100k – $250k", "$250k – $500k", "$500k – $1M", "Over $1M"],
+    "section": "Questionnaire",
+    "isVisible": true,
+    "isFilterable": true,
+    "isAutoDiscovered": false,
+    "createdAt": "2026-06-01T00:00:00.000Z"
+  },
+  {
+    "id": "cfd-timeline",
+    "key": "timeline",
+    "label": "Timeline",
+    "type": "select",
+    "options": ["Immediately", "2 – 4 weeks", "4 weeks+"],
+    "section": "Questionnaire",
+    "isVisible": true,
+    "isFilterable": true,
+    "isAutoDiscovered": false,
+    "createdAt": "2026-06-01T00:00:00.000Z"
+  },
+  {
+    "id": "cfd-years-in-business",
+    "key": "years_in_business",
+    "label": "Years in business",
+    "type": "number",
+    "section": "Questionnaire",
+    "isVisible": true,
+    "isFilterable": true,
+    "isAutoDiscovered": false,
+    "createdAt": "2026-06-01T00:00:00.000Z"
+  },
+  {
+    "id": "cfd-industry",
+    "key": "industry",
+    "label": "Industry",
+    "type": "text",
+    "section": "Questionnaire",
+    "isVisible": true,
+    "isFilterable": false,
+    "isAutoDiscovered": false,
+    "createdAt": "2026-06-01T00:00:00.000Z"
+  },
+  {
+    "id": "cfd-preferred-contact-time",
+    "key": "preferred_contact_time",
+    "label": "Preferred contact time",
+    "type": "text",
+    "section": "Questionnaire",
+    "isVisible": false,
+    "isFilterable": false,
+    "isAutoDiscovered": true,
+    "createdAt": "2026-08-02T00:00:00.000Z"
+  },
+  {
+    "id": "cfd-heard-about-us",
+    "key": "heard_about_us",
+    "label": "Heard about us",
+    "type": "text",
+    "section": "Questionnaire",
+    "isVisible": false,
+    "isFilterable": false,
+    "isAutoDiscovered": true,
+    "createdAt": "2026-08-09T00:00:00.000Z"
+  }
+]

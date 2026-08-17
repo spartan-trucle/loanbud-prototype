@@ -11,6 +11,8 @@ import {
   Layers,
   Inbox,
   CheckSquare,
+  Tag,
+  Megaphone,
 } from "lucide-react";
 import type { AppSidebarSection } from "../types";
 
@@ -31,6 +33,8 @@ export const appSidebarSections: AppSidebarSection[] = [
         children: [
           { id: "crm-contacts",   label: "Contacts",  route: "/crm/contacts",  icon: UsersIcon },
           { id: "crm-companies",  label: "Companies", route: "/crm/companies", icon: Building  },
+          { id: "crm-listings",   label: "Listings",  route: "/crm/listings",  icon: Tag       },
+          { id: "crm-campaigns",  label: "Campaigns", route: "/crm/campaigns", icon: Megaphone },
           { id: "crm-segments",   label: "Segments",  route: "/crm/segments",  icon: Layers    },
           { id: "crm-workflows",  label: "Workflows", route: "/crm/workflows", icon: Workflow  },
           { id: "crm-inbox",      label: "Inbox",     route: "/crm/inbox",     icon: Inbox      },

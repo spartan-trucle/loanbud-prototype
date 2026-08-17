@@ -6,7 +6,7 @@ import react from "@vitejs/plugin-react";
 function figmaAssetResolver() {
   return {
     name: "figma-asset-resolver",
-    resolveId(id) {
+    resolveId(id: string) {
       if (id.startsWith("figma:asset/")) {
         const filename = id.replace("figma:asset/", "");
         return path.resolve(__dirname, "src/assets", filename);
@@ -16,6 +16,8 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig({
+  // Served at the domain root in every environment (dev, Pages, Vercel).
+  base: "/",
   plugins: [
     figmaAssetResolver(),
     // The React and Tailwind plugins are both required for Make, even if
@@ -36,6 +38,17 @@ export default defineConfig({
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
   assetsInclude: ["**/*.svg", "**/*.csv"],
-  base: "/",
-  appType: 'spa',
+  appType: "spa",
+
+  build: {
+    rollupOptions: {
+      output: {
+        // React and the router change far less often than app code, so keeping them
+        // in their own chunk lets browsers reuse it across deploys.
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router"],
+        },
+      },
+    },
+  },
 });

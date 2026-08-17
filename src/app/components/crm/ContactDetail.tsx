@@ -11,9 +11,6 @@ import {
   Clock,
   PhoneCall,
   MessageSquare,
-  PauseCircle,
-  PlayCircle,
-  AlertTriangle,
   Pencil,
   Copy,
   CalendarDays,
@@ -33,13 +30,14 @@ import {
 } from "lucide-react";
 import { useAppData } from "@/app/contexts/AppDataContext";
 import { useDialer } from "@/app/contexts/DialerContext";
-import { useVersion } from "@/app/contexts/VersionContext";
 import { CreateTaskModal } from "@/app/components/email-workflows/CreateTaskModal";
 import { TaskActionModal } from "@/app/components/email-workflows/TaskActionModal";
 import { PauseAllCommsModal } from "./PauseAllCommsModal";
 import { ContactCommunicationsTab } from "./ContactCommunicationsTab";
-import { ExtraWorkflows } from "./ExtraWorkflows";
-import { attributionPathNodes } from "@/app/data/attributionTaxonomy";
+import { ContactAttributionBlock } from "./ContactAttributionBlock";
+import { ContactOfficeSection } from "./ContactOfficeSection";
+import { useContactOffice } from "./useContactOffice";
+import { ContactQuestionnaireSection } from "./ContactQuestionnaireSection";
 import {
   Select,
   SelectContent,
@@ -47,6 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { Switch } from "@/app/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -122,12 +121,10 @@ export function ContactDetail() {
     taskItems,
     contactActivity,
     workflowEnrollments,
-    workflows,
     handleCompleteTask,
     handleRescheduleTask,
     handleDeleteTask,
     handlePauseAllEnrollments,
-    handleBulkSetEnrollmentStatus,
     handleUpdateContact,
     handleResendMessage,
     handleSetChannelOptOut,
@@ -135,17 +132,14 @@ export function ContactDetail() {
   } = useAppData();
 
   const { openDialer } = useDialer();
-  const { version } = useVersion();
-  const isV2 = version === "v2";
 
   const [activeTab, setActiveTab] = useState<"history" | "tasks" | "communications" | "notes">(
-    () => (isV2 ? "communications" : "history"),
+    () => ("communications"),
   );
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [modalTask, setModalTask] = useState<TaskItem | null>(null);
   const [modalMode, setModalMode] = useState<TaskModalMode>(null);
-  const [enrollmentsOpen, setEnrollmentsOpen] = useState(true);
   const [infoOpen, setInfoOpen] = useState(true);
   const [addressOpen, setAddressOpen] = useState(false);
   const [applicationsOpen, setApplicationsOpen] = useState(true);
@@ -163,6 +157,7 @@ export function ContactDetail() {
   const [showCompleted, setShowCompleted] = useState(false);
 
   const contact = contacts.find((c) => c.id === id);
+  const contactOffice = useContactOffice(contact ?? ({ id: "" } as Contact));
 
   if (!contact) {
     return (
@@ -286,25 +281,6 @@ export function ContactDetail() {
     (e) => e.contactId === contact.id && e.status !== "completed",
   );
   const activeEnrollmentCount = contactEnrollments.filter((e) => e.status === "active").length;
-  const pausedEnrollments = contactEnrollments.filter((e) => e.status === "paused");
-
-  const sortedEnrollments = [...contactEnrollments]
-    .sort((a, b) => {
-      const wfA = workflows.find((w) => w.id === a.workflowId);
-      const wfB = workflows.find((w) => w.id === b.workflowId);
-      const lastA = contactActivity
-        .filter((x) => x.contactId === contact.id && x.sourceType === "flow" && x.source === wfA?.name)
-        .reduce((max, x) => Math.max(max, new Date(x.timestamp).getTime()), new Date(a.startDate).getTime());
-      const lastB = contactActivity
-        .filter((x) => x.contactId === contact.id && x.sourceType === "flow" && x.source === wfB?.name)
-        .reduce((max, x) => Math.max(max, new Date(x.timestamp).getTime()), new Date(b.startDate).getTime());
-      return lastB - lastA;
-    })
-    .slice(0, 3);
-
-  const hasOverdueEnrollments = contactEnrollments.some(
-    (e) => e.status === "paused" && e.pausedUntil && new Date(e.pausedUntil) <= new Date(),
-  );
 
   // Unread count for Communications tab badge
   const unreadCount = contactEmails.filter((e) => e.direction === "inbound" && !e.read).length;
@@ -329,11 +305,16 @@ export function ContactDetail() {
   return (
     <div className="h-full flex flex-col bg-background overflow-hidden">
 
-      {/* 3-column body */}
+      {/*
+        3-column body. Widths mirror frontend-hub's antd grid — Col lg={7} / lg={12} /
+        lg={5} of 24 — as percentages, so the proportions match exactly (29.17 / 50 /
+        20.83). Kept on one row: the container is a bounded `overflow-hidden` flex box
+        and each column scrolls independently, so wrapping would clip the wrapped row.
+      */}
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── LEFT PANEL ── */}
-        <aside className="w-72 xl:w-80 2xl:w-96 shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
+        <aside className="w-[29.1667%] shrink-0 border-r border-border bg-card flex flex-col overflow-y-auto">
 
           {/* Back button */}
           <div className="px-5 pt-4 pb-2">
@@ -411,47 +392,8 @@ export function ContactDetail() {
             </div>
           </div>
 
-          {/* Communication Preferences */}
-          <div className="px-5 py-4 border-b border-border">
-            <p className="text-sm font-semibold mb-3">Communication Preferences</p>
-            <div className="space-y-3">
-              {(["email", "sms"] as const).map((channel) => {
-                const optOutData = channel === "email" ? contact.emailOptOut : contact.smsOptOut;
-                const isOptedOut = optOutData?.optedOut === true;
-                return (
-                  <div key={channel} className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-2 min-w-0">
-                      <div className="mt-0.5 text-muted-foreground shrink-0">
-                        {channel === "email" ? <Mail className="w-3.5 h-3.5" /> : <MessageSquare className="w-3.5 h-3.5" />}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-medium capitalize">{channel}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isOptedOut ? "bg-destructive/10 text-destructive" : "bg-green-100 text-green-700"}`}>
-                            {isOptedOut ? "Opted out" : "Subscribed"}
-                          </span>
-                        </div>
-                        {isOptedOut && optOutData?.optedOutAt && (
-                          <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
-                            {optOutSourceLabel(optOutData.source)} · {formatShortDate(optOutData.optedOutAt)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setOptOutConfirm({ channel, optingOut: !isOptedOut })}
-                      className="text-xs text-primary hover:underline shrink-0 whitespace-nowrap"
-                    >
-                      {isOptedOut ? "Resubscribe" : "Opt out"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Loan Officer */}
-          <div className="px-5 py-4 border-b border-border">
+          {/* Loan Officer — the hub keeps this in the header, below the actions */}
+          <div className="px-5 pb-4 border-b border-border">
             <div className="flex items-center justify-between mb-0.5">
               <p className="text-sm font-semibold">Loan Officer</p>
               {contact.loanOfficer && (
@@ -478,103 +420,93 @@ export function ContactDetail() {
             </Select>
           </div>
 
-          {/* V2: Workflow status + comms controls */}
-          {isV2 && contactEnrollments.length > 0 && !contact.optedOut && (
-            <div className="border-b border-border px-5 py-4">
-              <button
-                onClick={() => setEnrollmentsOpen((v) => !v)}
-                className="flex items-center justify-between w-full mb-3"
-              >
-                <span className="text-sm font-semibold">Enrolled communication flow</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full">
-                    {contactEnrollments.length}
-                  </span>
-                  {enrollmentsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                </div>
-              </button>
 
-              {enrollmentsOpen && hasOverdueEnrollments && (
-                <button
-                  onClick={() => setActiveTab("communications")}
-                  className="mb-3 w-full flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-300 rounded-lg text-xs text-amber-700 hover:bg-amber-100 transition-colors"
-                >
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                  Resume due — click to view
-                </button>
-              )}
-
-              {enrollmentsOpen && (
-                <div className="space-y-2.5">
-                  {sortedEnrollments.map((e) => {
-                    const isPaused = e.status === "paused";
-                    const wf = workflows.find((w) => w.id === e.workflowId);
-                    const wfName = wf?.name ?? e.workflowId;
-                    const actionStepCount = wf?.steps.filter((s) => s.actionType !== "delay").length ?? 0;
-                    const stepsComplete = e.stepProgress.filter(
-                      (p) => p.status === "done" || p.status === "skipped",
-                    ).length;
-                    const pct =
-                      e.stepProgress.length > 0
-                        ? Math.round((stepsComplete / e.stepProgress.length) * 100)
-                        : 0;
-                    return (
-                      <div key={e.id} className="space-y-1.5">
+          {/*
+            Communication Preferences — mirrors frontend-hub's three channels.
+            Marketing Email keeps a button rather than a switch: unsubscribes are
+            recorded per sending domain and re-subscribing is an admin action, so a
+            single boolean cannot represent it. SMS and Call are plain booleans and
+            use switches, as they do there.
+          */}
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Communication Preferences</p>
+            <div className="space-y-3">
+              {(() => {
+                const emailOptOut = contact.emailOptOut;
+                const isEmailOptedOut = emailOptOut?.optedOut === true;
+                return (
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <Mail className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${isPaused ? "bg-amber-400" : "bg-green-500"}`}
-                          />
-                          <span className="text-xs font-medium truncate flex-1">{wfName}</span>
-                          {actionStepCount > 0 && (
-                            <span className="text-xs px-1.5 py-0.5 bg-muted text-muted-foreground rounded-full shrink-0 whitespace-nowrap">
-                              {actionStepCount} steps
-                            </span>
-                          )}
+                          <span className="text-xs font-medium">Marketing Email</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isEmailOptedOut ? "bg-destructive/10 text-destructive" : "bg-green-100 text-green-700"}`}>
+                            {isEmailOptedOut ? "Unsubscribed" : "Subscribed"}
+                          </span>
                         </div>
-                        {isPaused && (
-                          <div className="text-xs text-amber-600 pl-3">
-                            {e.pausedUntil ? `Paused until ${formatShortDate(e.pausedUntil)}` : "Paused"}
-                          </div>
+                        {isEmailOptedOut && emailOptOut?.optedOutAt && (
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                            {optOutSourceLabel(emailOptOut.source)} · {formatShortDate(emailOptOut.optedOutAt)}
+                          </p>
                         )}
-                        <div className="h-1 bg-muted rounded-full overflow-hidden ml-3">
-                          <div className="h-full bg-primary/60 rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    </div>
+                    <button
+                      onClick={() => setOptOutConfirm({ channel: "email", optingOut: !isEmailOptedOut })}
+                      className="text-xs text-primary hover:underline shrink-0 whitespace-nowrap"
+                    >
+                      {isEmailOptedOut ? "Re-subscribe" : "Unsubscribe"}
+                    </button>
+                  </div>
+                );
+              })()}
 
-              {enrollmentsOpen && (
-                <div className="mt-3 flex flex-col gap-2">
-                  {activeEnrollmentCount > 0 && (
-                    <button
-                      onClick={() => setShowPauseModal(true)}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium border border-border text-foreground bg-background rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <PauseCircle className="w-3.5 h-3.5" />
-                      Pause communication
-                    </button>
-                  )}
-                  {pausedEnrollments.length > 0 && (
-                    <button
-                      onClick={() => handleBulkSetEnrollmentStatus(pausedEnrollments.map((e) => e.id), "active")}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium border border-border text-foreground bg-background rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <PlayCircle className="w-3.5 h-3.5" />
-                      Resume all paused
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setActiveTab("communications")}
-                    className="w-full text-xs text-primary hover:underline py-1"
-                  >
-                    View Details →
-                  </button>
+              {(() => {
+                const isSmsOptedOut = contact.smsOptOut?.optedOut === true;
+                return (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <MessageSquare className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-xs font-medium">SMS</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isSmsOptedOut ? "bg-destructive/10 text-destructive" : "bg-green-100 text-green-700"}`}>
+                        {isSmsOptedOut ? "Opted out" : "Subscribed"}
+                      </span>
+                    </div>
+                    <Switch
+                      aria-label="SMS subscription"
+                      checked={!isSmsOptedOut}
+                      onCheckedChange={(subscribed) =>
+                        // Opting out is the destructive direction, so confirm it;
+                        // opting back in applies straight away.
+                        subscribed
+                          ? handleSetChannelOptOut(contact.id, "sms", false)
+                          : setOptOutConfirm({ channel: "sms", optingOut: true })
+                      }
+                    />
+                  </div>
+                );
+              })()}
+
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <PhoneCall className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs font-medium">Call</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${contact.isDoNotCall ? "bg-destructive/10 text-destructive" : "bg-green-100 text-green-700"}`}>
+                    {contact.isDoNotCall ? "Do not call" : "Callable"}
+                  </span>
                 </div>
-              )}
+                <Switch
+                  aria-label="Call subscription"
+                  checked={!contact.isDoNotCall}
+                  onCheckedChange={(callable) =>
+                    handleUpdateContact(contact.id, { isDoNotCall: !callable })
+                  }
+                />
+              </div>
             </div>
-          )}
+          </div>
+
 
           {/* Contact Info accordion */}
           <div className="px-5 py-5 border-b border-border">
@@ -582,7 +514,7 @@ export function ContactDetail() {
               onClick={() => setInfoOpen((v) => !v)}
               className="flex items-center justify-between w-full mb-3"
             >
-              <span className="text-sm font-semibold">Contact Info</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Contact Info</span>
               {infoOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </button>
 
@@ -601,34 +533,8 @@ export function ContactDetail() {
                   <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Email</p>
                   <span className="text-sm break-all">{contact.email}</span>
                 </div>
-                {/* V2 (RFC-009): attribution pyramid classification */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Attribution</p>
-                  {contact.attributionNodeId ? (
-                    <span className="text-sm flex flex-wrap items-center gap-1">
-                      {attributionPathNodes(contact.attributionNodeId).map((node, idx) => (
-                        <span key={node.id} className="inline-flex items-center gap-1">
-                          {idx > 0 && <span className="text-muted-foreground">&gt;</span>}
-                          <span className={idx === attributionPathNodes(contact.attributionNodeId!).length - 1 ? "font-medium" : ""}>
-                            {node.name}
-                          </span>
-                        </span>
-                      ))}
-                    </span>
-                  ) : (
-                    <span className="text-sm">N/A</span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Time Zone</p>
-                    <span className="text-sm">{contact.timeZone ?? "—"}</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Preferred Language</p>
-                    <span className="text-sm">{contact.preferredLanguage ?? "—"}</span>
-                  </div>
-                </div>
+                {/* Flat attribution: closed-enum source + drill-downs, campaign as its own object */}
+                <ContactAttributionBlock contact={contact} />
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Created at</p>
@@ -643,13 +549,21 @@ export function ContactDetail() {
             )}
           </div>
 
+
+          {/* Office — hidden entirely when the contact has no office attached */}
+          {contactOffice && (
+            <div className="px-5 py-4 border-b border-border">
+              <ContactOfficeSection office={contactOffice} />
+            </div>
+          )}
+
           {/* Address accordion */}
           <div className="px-5 py-5">
             <button
               onClick={() => setAddressOpen((v) => !v)}
               className="flex items-center justify-between w-full mb-3"
             >
-              <span className="text-sm font-semibold">Address</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Address</span>
               {addressOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </button>
 
@@ -690,10 +604,10 @@ export function ContactDetail() {
         </aside>
 
         {/* ── CENTER PANEL ── */}
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className="w-1/2 shrink-0 flex flex-col overflow-hidden">
           {/* Tab bar */}
           <div className="border-b border-border flex justify-center gap-8">
-            {([...(isV2 ? ["communications" as const] : []), "history", "tasks", "notes"] as const).map((tab) => {
+            {(["communications" as const, "history", "notes", "tasks"] as const).map((tab) => {
               let label: string;
               if (tab === "history") label = "History";
               else if (tab === "tasks") label = `Tasks (${contactTasks.filter((t) => t.status !== "completed").length})`;
@@ -1042,7 +956,7 @@ export function ContactDetail() {
             )}
 
             {/* ── COMMUNICATIONS TAB (V2 only) ── */}
-            {activeTab === "communications" && isV2 && (
+            {activeTab === "communications" && (
               <div className="bg-card rounded-xl overflow-hidden p-5">
                 <ContactCommunicationsTab
                   contactId={contact.id}
@@ -1058,71 +972,7 @@ export function ContactDetail() {
         </main>
 
         {/* ── RIGHT PANEL ── */}
-        <aside className="w-72 xl:w-80 2xl:w-96 shrink-0 border-l border-border bg-card flex flex-col overflow-y-auto">
-
-          {/* Applications */}
-          <div className="px-5 py-5 border-b border-border">
-            <button
-              onClick={() => setApplicationsOpen((v) => !v)}
-              className="flex items-center justify-between w-full mb-3"
-            >
-              <h3 className="text-sm font-semibold">Applications</h3>
-              {applicationsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-            </button>
-            {applicationsOpen && (() => {
-              const linkedApp = applications.find((a) => a.id === contact.linkedApplicationId);
-              return linkedApp ? (
-                <div className="p-3 border border-border rounded-xl bg-background">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-xs font-semibold text-foreground">#{linkedApp.applicationNumber}</span>
-                    <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full">{linkedApp.stage}</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">{linkedApp.loanPurpose}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{linkedApp.loanOfficerName}</div>
-                </div>
-              ) : (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Link Application (Loan ID #)</p>
-                  <button className="text-sm font-medium text-primary hover:underline">Select application</button>
-                </div>
-              );
-            })()}
-          </div>
-
-          {/* Workflows (V2 · RFC-008) */}
-          {isV2 && <ExtraWorkflows contactId={contact.id} />}
-
-          {/* Companies */}
-          <div className="px-5 py-5 border-b border-border">
-            <button
-              onClick={() => setCompaniesOpen((v) => !v)}
-              className="flex items-center justify-between w-full mb-3"
-            >
-              <h3 className="text-sm font-semibold">Companies</h3>
-              {companiesOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-            </button>
-            {companiesOpen && (
-              <div className="flex flex-wrap gap-2">
-                {(contact.companies ?? []).map((company) => (
-                  <span key={company} className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted rounded-full text-xs font-medium">
-                    {company}
-                    <button
-                      onClick={() => handleUpdateContact(contact.id, {
-                        companies: (contact.companies ?? []).filter((c) => c !== company),
-                      })}
-                      className="text-muted-foreground hover:text-foreground ml-0.5"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                ))}
-                <button className="inline-flex items-center gap-1 px-2.5 py-1 border border-dashed border-border rounded-full text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
-                  <Plus className="w-3 h-3" />
-                  Add company
-                </button>
-              </div>
-            )}
-          </div>
+        <aside className="w-[20.8333%] shrink-0 border-l border-border bg-card flex flex-col overflow-y-auto">
 
           {/* Listings */}
           <div className="px-5 py-5 border-b border-border">
@@ -1158,6 +1008,71 @@ export function ContactDetail() {
                 </div>
               );
             })()}
+          </div>
+
+          {/* Companies */}
+          <div className="px-5 py-5 border-b border-border">
+            <button
+              onClick={() => setCompaniesOpen((v) => !v)}
+              className="flex items-center justify-between w-full mb-3"
+            >
+              <h3 className="text-sm font-semibold">Companies</h3>
+              {companiesOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+            </button>
+            {companiesOpen && (
+              <div className="flex flex-wrap gap-2">
+                {(contact.companies ?? []).map((company) => (
+                  <span key={company} className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted rounded-full text-xs font-medium">
+                    {company}
+                    <button
+                      onClick={() => handleUpdateContact(contact.id, {
+                        companies: (contact.companies ?? []).filter((c) => c !== company),
+                      })}
+                      className="text-muted-foreground hover:text-foreground ml-0.5"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+                <button className="inline-flex items-center gap-1 px-2.5 py-1 border border-dashed border-border rounded-full text-xs text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
+                  <Plus className="w-3 h-3" />
+                  Add company
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Applications */}
+          <div className="px-5 py-5 border-b border-border">
+            <button
+              onClick={() => setApplicationsOpen((v) => !v)}
+              className="flex items-center justify-between w-full mb-3"
+            >
+              <h3 className="text-sm font-semibold">Applications</h3>
+              {applicationsOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+            </button>
+            {applicationsOpen && (() => {
+              const linkedApp = applications.find((a) => a.id === contact.linkedApplicationId);
+              return linkedApp ? (
+                <div className="p-3 border border-border rounded-xl bg-background">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-xs font-semibold text-foreground">#{linkedApp.applicationNumber}</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full">{linkedApp.stage}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{linkedApp.loanPurpose}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">{linkedApp.loanOfficerName}</div>
+                </div>
+              ) : (
+                // Matches frontend-hub: applications are linked by the Hub sync, not by
+                // hand, so there is no link/select (or unlink) affordance here.
+                <p className="text-xs text-muted-foreground">No applications linked</p>
+              );
+            })()}
+          </div>
+
+          {/* Questionnaire — rendered from admin-defined custom fields */}
+          <div className="px-1">
+            <ContactQuestionnaireSection contact={contact} />
           </div>
 
           {/* Upcoming Tasks */}

@@ -114,7 +114,7 @@ export function SmsTemplatesTab() {
       toast.error("Name and message are required.");
       return;
     }
-    handleCreateSmsTemplate(newForm);
+    handleCreateSmsTemplate({ ...newForm, characterCount: newForm.message.length });
     toast.success("SMS template created.");
     setNewOpen(false);
   };
@@ -136,7 +136,10 @@ export function SmsTemplatesTab() {
 
   const handleEditConfirmSave = () => {
     if (selected) {
-      handleUpdateSmsTemplate(selected.id, editForm);
+      handleUpdateSmsTemplate(selected.id, {
+        ...editForm,
+        characterCount: editForm.message.length,
+      });
       setSelected({ ...selected, ...editForm });
       toast.success("SMS template updated.");
     }

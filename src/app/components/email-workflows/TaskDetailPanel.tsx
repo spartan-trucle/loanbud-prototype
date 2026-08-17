@@ -22,7 +22,6 @@ import type { Contact, TaskItem } from "@/app/types";
 import { getTaskTypeConfig } from "@/app/lib/taskTypeRegistry";
 import { useDialer } from "@/app/contexts/DialerContext";
 import { useAppData } from "@/app/contexts/AppDataContext";
-import { useVersion } from "@/app/contexts/VersionContext";
 import { OutcomeCapturePanel } from "./OutcomeCapturePanel";
 import { ContactContextPanel } from "./ContactContextPanel";
 import { CreateTaskModal } from "./CreateTaskModal";
@@ -190,8 +189,6 @@ export function TaskDetailPanel({
 }: TaskDetailPanelProps) {
   const { handleCompleteTaskWithOutcome, handleRescheduleTask, handleSendTaskEmail, workflowEnrollments } = useAppData();
   const { openDialerForTask, session } = useDialer();
-  const { version } = useVersion();
-  const isV2 = version === "v2";
 
   const [showVmScript, setShowVmScript] = useState(false);
   const [showOutcomeCapture, setShowOutcomeCapture] = useState(false);
@@ -321,7 +318,7 @@ export function TaskDetailPanel({
             </div>
 
             {/* ── V2 (RFC-008): Contact Context ──────────────────────────── */}
-            {isV2 && contact && <ContactContextPanel contact={contact} />}
+            {contact && <ContactContextPanel contact={contact} />}
 
             {/* ── Properties ─────────────────────────────────────────────── */}
             <div className="space-y-0.5 mb-6">

@@ -1,4 +1,4 @@
-import type { Contact, EmailRecord, Task, Segment, TaskItem, Application, BusinessAcquisitionRecord, Workflow, WorkflowEnrollment, ContactActivityRecord, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder } from "../types";
+import type { Contact, EmailRecord, Task, Segment, TaskItem, Application, BusinessAcquisitionRecord, Workflow, WorkflowEnrollment, ContactActivityRecord, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder, Campaign, CustomFieldDefinition, Company, ListingRecord } from "../types";
 import contactsJson from "./contacts.json";
 import segmentsJson from "./segments.json";
 import taskItemsJson from "./taskItems.json";
@@ -17,11 +17,19 @@ import voicemailSettingsJson from "./voicemailSettings.json";
 import senderIdentitiesJson from "./senderIdentities.json";
 import notificationsJson from "./notifications.json";
 import loGroupsJson from "./loGroups.json";
+import campaignsJson from "./campaigns.json";
+import customFieldDefinitionsJson from "./customFieldDefinitions.json";
+import companiesJson from "./companies.json";
+import listingsJson from "./listings.json";
 
 const KEYS = {
-  // v5: RFC-009 seed — attributionNodeId classification on every contact (lead source pyramid)
-  contacts: "loanbudcrm:v5:contacts",
+  // v6: traffic-source enum reduced to five; contacts on retired branches remapped
+  contacts: "loanbudcrm:v6:contacts",
   segments: "loanbudcrm:v2:segments",
+  campaigns: "loanbudcrm:v2:campaigns",
+  companies: "loanbudcrm:v1:companies",
+  listings: "loanbudcrm:v1:listings",
+  customFieldDefinitions: "loanbudcrm:v1:customFieldDefinitions",
   taskItems: "loanbudcrm:taskItems",
   emailHistory: "loanbudcrm:v3:emailHistory",
   tasks: "loanbudcrm:tasks",
@@ -61,30 +69,35 @@ function writeStringArray(key: string, data: string[]): void {
   localStorage.setItem(key, JSON.stringify(data));
 }
 
-function reviveDates<T extends Record<string, unknown>>(
-  items: T[],
-  dateFields: string[],
-): T[] {
+/**
+ * JSON — both the seed files and localStorage — carries dates as ISO strings.
+ * Rehydrate the named fields into real `Date`s so consumers can call date methods.
+ *
+ * The record view is deliberate: entity types are interfaces without index
+ * signatures, so a generic constrained to `Record<string, unknown>` would reject
+ * every one of them and a generic index write would not type-check either.
+ */
+function reviveDates<T>(items: readonly unknown[], dateFields: readonly string[]): T[] {
   return items.map((item) => {
-    const result = { ...item };
+    const result = { ...(item as Record<string, unknown>) };
     for (const field of dateFields) {
-      const val = result[field];
-      if (typeof val === "string") {
-        result[field] = new Date(val);
+      const value = result[field];
+      if (typeof value === "string") {
+        result[field] = new Date(value);
       }
     }
-    return result;
+    return result as T;
   });
 }
 
-function read<T extends Record<string, unknown>>(
+function read<T>(
   key: string,
-  fallback: T[],
-  dateFields: string[],
+  fallback: readonly unknown[],
+  dateFields: readonly string[],
 ): T[] {
   const raw = localStorage.getItem(key);
-  const parsed: T[] = raw ? (JSON.parse(raw) as T[]) : fallback;
-  return reviveDates(parsed, dateFields);
+  const parsed: readonly unknown[] = raw ? (JSON.parse(raw) as unknown[]) : fallback;
+  return reviveDates<T>(parsed, dateFields);
 }
 
 function write<T>(key: string, data: T[]): void {
@@ -96,7 +109,7 @@ export const store = {
     read: () =>
       read<Contact>(
         KEYS.contacts,
-        contactsJson as Contact[],
+        contactsJson,
         ["createAt"],
       ),
     write: (data: Contact[]) => write(KEYS.contacts, data),
@@ -105,16 +118,53 @@ export const store = {
     read: () =>
       read<Segment>(
         KEYS.segments,
-        segmentsJson as Segment[],
+        segmentsJson,
         ["lastUpdatedAt", "createdAt"],
       ),
     write: (data: Segment[]) => write(KEYS.segments, data),
+  },
+  campaigns: {
+    read: () =>
+      read<Campaign>(
+        KEYS.campaigns,
+        campaignsJson,
+        ["startDate", "endDate", "createdAt"],
+      ),
+    write: (data: Campaign[]) => write(KEYS.campaigns, data),
+  },
+  companies: {
+    read: () =>
+      read<Company>(
+        KEYS.companies,
+        companiesJson,
+        ["createdAt", "updatedAt"],
+      ),
+    write: (data: Company[]) => write(KEYS.companies, data),
+  },
+  listings: {
+    read: () =>
+      read<ListingRecord>(
+        KEYS.listings,
+        listingsJson,
+        ["createdAt", "updatedAt"],
+      ),
+    write: (data: ListingRecord[]) => write(KEYS.listings, data),
+  },
+  customFieldDefinitions: {
+    read: () =>
+      read<CustomFieldDefinition>(
+        KEYS.customFieldDefinitions,
+        customFieldDefinitionsJson,
+        ["createdAt"],
+      ),
+    write: (data: CustomFieldDefinition[]) =>
+      write(KEYS.customFieldDefinitions, data),
   },
   taskItems: {
     read: () =>
       read<TaskItem>(
         KEYS.taskItems,
-        taskItemsJson as TaskItem[],
+        taskItemsJson,
         ["dueDate", "completedAt"],
       ),
     write: (data: TaskItem[]) => write(KEYS.taskItems, data),
@@ -123,7 +173,7 @@ export const store = {
     read: () =>
       read<EmailRecord>(
         KEYS.emailHistory,
-        emailHistoryJson as EmailRecord[],
+        emailHistoryJson,
         ["sentAt"],
       ),
     write: (data: EmailRecord[]) => write(KEYS.emailHistory, data),
@@ -132,7 +182,7 @@ export const store = {
     read: () =>
       read<Task>(
         KEYS.tasks,
-        tasksJson as Task[],
+        tasksJson,
         ["scheduledFor", "completedAt"],
       ),
     write: (data: Task[]) => write(KEYS.tasks, data),
@@ -141,7 +191,7 @@ export const store = {
     read: () =>
       read<Application>(
         KEYS.applications,
-        applicationsJson as Application[],
+        applicationsJson,
         ["createdAt", "updatedAt"],
       ),
     write: (data: Application[]) => write(KEYS.applications, data),
@@ -150,7 +200,7 @@ export const store = {
     read: () =>
       read<BusinessAcquisitionRecord>(
         KEYS.businessAcquisitions,
-        businessAcquisitionsJson as BusinessAcquisitionRecord[],
+        businessAcquisitionsJson,
         ["createdAt", "updatedAt"],
       ),
     write: (data: BusinessAcquisitionRecord[]) =>
@@ -160,7 +210,7 @@ export const store = {
     read: () =>
       read<Workflow>(
         KEYS.workflows,
-        workflowsJson as unknown as Workflow[],
+        workflowsJson,
         ["createdAt"],
       ),
     write: (data: Workflow[]) => write(KEYS.workflows, data),
@@ -169,7 +219,7 @@ export const store = {
     read: () => {
       const enrollments = read<WorkflowEnrollment>(
         KEYS.workflowEnrollments,
-        workflowEnrollmentsJson as unknown as WorkflowEnrollment[],
+        workflowEnrollmentsJson,
         ["startDate", "pausedUntil"],
       );
       return enrollments.map((e) => ({
@@ -180,14 +230,14 @@ export const store = {
     write: (data: WorkflowEnrollment[]) => write(KEYS.workflowEnrollments, data),
   },
   contactActivity: {
-    read: () => read<ContactActivityRecord>(KEYS.contactActivity, contactActivityJson as ContactActivityRecord[], ["timestamp"]),
+    read: () => read<ContactActivityRecord>(KEYS.contactActivity, contactActivityJson, ["timestamp"]),
     write: (data: ContactActivityRecord[]) => write(KEYS.contactActivity, data),
   },
   adminEmailTemplates: {
     read: () =>
       read<AdminEmailTemplate>(
         KEYS.adminEmailTemplates,
-        adminEmailTemplatesJson as AdminEmailTemplate[],
+        adminEmailTemplatesJson,
         ["createdAt", "updatedAt"],
       ),
     write: (data: AdminEmailTemplate[]) => write(KEYS.adminEmailTemplates, data),
@@ -196,7 +246,7 @@ export const store = {
     read: () =>
       read<TemplateFolder>(
         KEYS.templateFolders,
-        templateFoldersJson as TemplateFolder[],
+        templateFoldersJson,
         ["createdAt"],
       ),
     write: (data: TemplateFolder[]) => write(KEYS.templateFolders, data),
@@ -205,7 +255,7 @@ export const store = {
     read: () =>
       read<SmsTemplate>(
         KEYS.smsTemplates,
-        smsTemplatesJson as SmsTemplate[],
+        smsTemplatesJson,
         ["createdAt", "updatedAt"],
       ),
     write: (data: SmsTemplate[]) => write(KEYS.smsTemplates, data),
@@ -214,7 +264,7 @@ export const store = {
     read: () =>
       read<VoicemailScript>(
         KEYS.voicemailScripts,
-        voicemailScriptsJson as VoicemailScript[],
+        voicemailScriptsJson,
         ["createdAt", "updatedAt"],
       ),
     write: (data: VoicemailScript[]) => write(KEYS.voicemailScripts, data),
@@ -223,7 +273,7 @@ export const store = {
     read: () =>
       read<VoicemailSettings>(
         KEYS.voicemailSettings,
-        voicemailSettingsJson as VoicemailSettings[],
+        voicemailSettingsJson,
         [],
       ),
     write: (data: VoicemailSettings[]) => write(KEYS.voicemailSettings, data),
@@ -232,7 +282,7 @@ export const store = {
     read: () =>
       read<SenderIdentity>(
         KEYS.senderIdentities,
-        senderIdentitiesJson as SenderIdentity[],
+        senderIdentitiesJson,
         ["createdAt"],
       ),
     write: (data: SenderIdentity[]) => write(KEYS.senderIdentities, data),
@@ -241,7 +291,7 @@ export const store = {
     read: () =>
       read<Notification>(
         KEYS.notifications,
-        notificationsJson as Notification[],
+        notificationsJson,
         ["createdAt"],
       ),
     write: (data: Notification[]) => write(KEYS.notifications, data),
@@ -250,7 +300,7 @@ export const store = {
     read: () =>
       read<LoGroup>(
         KEYS.loGroups,
-        loGroupsJson as unknown as LoGroup[],
+        loGroupsJson,
         ["createdAt"],
       ),
     write: (data: LoGroup[]) => write(KEYS.loGroups, data),

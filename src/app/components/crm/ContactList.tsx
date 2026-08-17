@@ -1,15 +1,32 @@
 import { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import { Search, Upload } from "lucide-react";
 import { Button } from "../ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { useAppData } from "@/app/contexts/AppDataContext";
 import { useNavigate } from "react-router";
 import { AttributionFilterPopover } from "./AttributionFilterPopover";
+import { ContactsFilterBar } from "./ContactsFilterBar";
+import { EMPTY_CONTACT_FILTERS, type ContactFilters } from "./contactFilters";
+import { ContactAddModal } from "./ContactAddModal";
+import { ContactImportModal } from "./ContactImportModal";
+import type { Contact, ContactImportSource } from "@/app/types";
 import {
   attributionDescendantIds,
-  attributionNodeById,
-  attributionPathLabel,
   attributionPathNodes,
 } from "@/app/data/attributionTaxonomy";
+import {
+  attributionSummary,
+  resolveAttribution,
+  TRAFFIC_SOURCES,
+  trafficSourceLabel,
+  trafficSourceTone,
+} from "@/app/data/trafficSources";
+import { resolveCampaign, resolveCampaignId } from "@/app/data/campaignUtils";
 
 type ActiveView = "all" | "broker" | "lender" | "partner";
 
@@ -20,29 +37,120 @@ const VIEW_CHIPS: { label: string; value: ActiveView }[] = [
   { label: "Saved View (1)", value: "lender" },
 ];
 
+const CONTACT_STATUSES = ["Active", "Inactive", "Unqualified"];
+
+const TH_CLASS = "px-6 py-4 text-left text-sm text-muted-foreground";
+const TH_STYLE = { fontFamily: "var(--font-sans)", fontWeight: 600 } as const;
+
+/** Companies shown in the list: the multi-company field, falling back to the listing name. */
+function companiesOf(contact: Contact): string[] {
+  if (contact.companies && contact.companies.length > 0) return contact.companies;
+  return contact.listingName ? [contact.listingName] : [];
+}
+
+/**
+ * The list shows the traffic source only. Drill-downs stay on the contact detail —
+ * a second line per row makes the table noisy and the enum is what people scan for.
+ * The full path is still available on hover.
+ */
+function TrafficSourceCell({ contact }: { contact: Contact }) {
+  const { trafficSource } = resolveAttribution(contact);
+
+  if (!trafficSource) {
+    return <span className="text-xs text-muted-foreground">Unknown</span>;
+  }
+
+  return (
+    <span
+      title={attributionSummary(contact)}
+      className={`inline-flex w-fit px-2 py-0.5 rounded-full border text-xs whitespace-nowrap ${trafficSourceTone(trafficSource)}`}
+    >
+      {trafficSourceLabel(trafficSource)}
+    </span>
+  );
+}
+
 export function ContactList() {
-  const { contacts } = useAppData();
+  const { contacts, campaigns } = useAppData();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeView, setActiveView] = useState<ActiveView>("all");
   // V2 (RFC-009): hierarchical attribution filter — selected pyramid nodes
   const [attributionIds, setAttributionIds] = useState<string[]>([]);
+  const [filters, setFilters] = useState<ContactFilters>(EMPTY_CONTACT_FILTERS);
+  const [addOpen, setAddOpen] = useState(false);
+  const [importSource, setImportSource] = useState<ContactImportSource | null>(null);
+
+  // Filter dropdown options are derived from the data, like the real filter-data hook.
+  const companyOptions = useMemo(
+    () => [...new Set(contacts.flatMap(companiesOf))].sort(),
+    [contacts],
+  );
+  const roleOptions = useMemo(
+    () => [...new Set(contacts.map((c) => c.userType))].sort(),
+    [contacts],
+  );
+  const assigneeOptions = useMemo(
+    () =>
+      [...new Set(contacts.map((c) => c.loanOfficer).filter((v): v is string => !!v))].sort(),
+    [contacts],
+  );
 
   const filteredContacts = useMemo(() => {
     let result = contacts;
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(
         (c) =>
-          c.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.listingName.toLowerCase().includes(searchTerm.toLowerCase()),
+          c.firstName.toLowerCase().includes(term) ||
+          c.lastName.toLowerCase().includes(term) ||
+          c.email.toLowerCase().includes(term) ||
+          c.listingName.toLowerCase().includes(term),
       );
     }
 
     if (activeView !== "all") {
       result = result.filter((c) => c.userType.toLowerCase() === activeView);
+    }
+
+    if (filters.company !== "ALL") {
+      result = result.filter((c) => companiesOf(c).includes(filters.company));
+    }
+
+    if (filters.role !== "ALL") {
+      result = result.filter((c) => c.userType === filters.role);
+    }
+
+    if (filters.status !== "ALL") {
+      // Seeded contacts predate the status field; they read as Active.
+      result = result.filter((c) => (c.status ?? "Active") === filters.status);
+    }
+
+    if (filters.assignee !== "ALL") {
+      result = result.filter((c) => c.loanOfficer === filters.assignee);
+    }
+
+    if (filters.trafficSource !== "ALL") {
+      result = result.filter(
+        (c) => resolveAttribution(c).trafficSource === filters.trafficSource,
+      );
+    }
+
+    if (filters.campaign !== "ALL") {
+      result = result.filter((c) => resolveCampaignId(c) === filters.campaign);
+    }
+
+    if (filters.createdFrom) {
+      const from = new Date(filters.createdFrom);
+      result = result.filter((c) => c.createAt >= from);
+    }
+
+    if (filters.createdTo) {
+      // The picker gives a day; include everything within that day.
+      const to = new Date(filters.createdTo);
+      to.setHours(23, 59, 59, 999);
+      result = result.filter((c) => c.createAt <= to);
     }
 
     if (attributionIds.length > 0) {
@@ -55,7 +163,7 @@ export function ContactList() {
     }
 
     return result;
-  }, [contacts, searchTerm, activeView, attributionIds]);
+  }, [contacts, searchTerm, activeView, attributionIds, filters]);
 
   // per-node contact counts (descendant-inclusive) for the filter tree badges
   const attributionCounts = useMemo(() => {
@@ -100,8 +208,8 @@ export function ContactList() {
             </button>
           ))}
         </div>
-        {/* Search Bar and Add Button Inline */}
-        <div className="flex items-center gap-4">
+        {/* Search Bar and Actions Inline */}
+        <div className="flex items-center gap-4 mb-3">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
@@ -117,70 +225,65 @@ export function ContactList() {
             selectedIds={attributionIds}
             onChange={setAttributionIds}
             countsByNodeId={attributionCounts}
-            triggerLabel="Apply Filters"
+            triggerLabel="Attribution"
           />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="px-3 py-1.5 text-sm">
+                <Upload className="w-4 h-4 mr-1.5" />
+                Import
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setImportSource("csv")}>
+                Import from CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setImportSource("bizbuysell")}>
+                Import BizBuySell leads
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="default"
             className="px-3 py-1.5 text-sm"
-            onClick={() => {
-              // Handle add contact button click
-            }}
+            onClick={() => setAddOpen(true)}
           >
             Add Contact
           </Button>
         </div>
+
+        <ContactsFilterBar
+          filters={filters}
+          onChange={setFilters}
+          companies={companyOptions}
+          roles={roleOptions}
+          statuses={CONTACT_STATUSES}
+          assignees={assigneeOptions}
+          trafficSources={TRAFFIC_SOURCES.map((s) => ({
+            value: s.id,
+            label: s.label,
+          }))}
+          campaigns={campaigns.map((c) => ({ value: c.id, label: c.name }))}
+        />
       </div>
 
       {/* Contact Table */}
       <div className="flex-1 overflow-auto px-8 py-6">
-        <div className="max-w-7xl mx-auto">
+        <div>
         <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50 border-b border-border">
               <tr>
-                <th
-                  className="px-6 py-4 text-left text-sm text-muted-foreground"
-                  style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
-                >
-                  Contact Name
-                </th>
-                <th
-                  className="px-6 py-4 text-left text-sm text-muted-foreground"
-                  style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
-                >
-                  Role
-                </th>
-                <th
-                  className="px-6 py-4 text-left text-sm text-muted-foreground"
-                  style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
-                >
-                  Company
-                </th>
-                <th
-                  className="px-6 py-4 text-left text-sm text-muted-foreground"
-                  style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
-                >
-                  Attribution
-                </th>
-                <th
-                  className="px-6 py-4 text-left text-sm text-muted-foreground"
-                  style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
-                >
-                  Phone
-                </th>
-                <th
-                  className="px-6 py-4 text-left text-sm text-muted-foreground"
-                  style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
-                >
-                  Email
-                </th>
-
-                <th
-                  className="px-6 py-4 text-left text-sm text-muted-foreground"
-                  style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
-                >
-                  Create As
-                </th>
+                <th className={TH_CLASS} style={TH_STYLE}>Full Name</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Role</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Companies</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Phone</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Email</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Created at</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Assignee</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Original Traffic Source</th>
+                <th className={TH_CLASS} style={TH_STYLE}>Campaign</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -205,40 +308,53 @@ export function ContactList() {
                     <div className="text-sm">{contact.userType}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm">{contact.listingName}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {contact.attributionNodeId ? (
-                      <span
-                        className="inline-flex px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs whitespace-nowrap"
-                        title={attributionPathLabel(contact.attributionNodeId)}
-                      >
-                        {attributionNodeById(contact.attributionNodeId)?.name ?? "N/A"}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">N/A</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm  text-blue-600">
-                      {contact.phone}
+                    <span className="text-sm">
+                      {companiesOf(contact).join(", ") || (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-sm  text-blue-600">
-                      {contact.email}
-                    </span>
+                    <span className="text-sm text-blue-600">{contact.phone}</span>
                   </td>
-
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-blue-600">{contact.email}</span>
+                  </td>
                   <td className="px-6 py-4">
                     <span className="text-sm">
                       {contact.createAt?.toLocaleDateString()}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm">
+                      {contact.loanOfficer ?? (
+                        <span className="text-muted-foreground">Unassigned</span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <TrafficSourceCell contact={contact} />
+                  </td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const campaign = resolveCampaign(contact, campaigns);
+                      return campaign ? (
+                        <span
+                          className="text-sm text-blue-600"
+                          title={`utm_campaign=${campaign.utmCampaign}`}
+                        >
+                          {campaign.name}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      );
+                    })()}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
 
           {filteredContacts.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
@@ -248,6 +364,19 @@ export function ContactList() {
         </div>
         </div>
       </div>
+
+      <ContactAddModal
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        assignees={assigneeOptions}
+      />
+      {importSource && (
+        <ContactImportModal
+          open
+          onOpenChange={(next) => !next && setImportSource(null)}
+          source={importSource}
+        />
+      )}
     </div>
   );
 }

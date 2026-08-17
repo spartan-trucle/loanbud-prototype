@@ -1,0 +1,78 @@
+[
+  {
+    "id": "co-1",
+    "name": "Riverbend Manufacturing",
+    "companyType": "Borrower",
+    "primaryContactId": "1",
+    "tags": [
+      "Manufacturing",
+      "SBA 7(a)"
+    ],
+    "attributionSource": "service-loanbud-hub",
+    "createdAt": "2026-01-15T00:00:00.000Z",
+    "updatedAt": "2026-08-02T14:20:00.000Z"
+  },
+  {
+    "id": "co-2",
+    "name": "Copperline Logistics",
+    "companyType": "Borrower",
+    "primaryContactId": "2",
+    "tags": [
+      "Transport"
+    ],
+    "attributionSource": "CRM",
+    "createdAt": "2026-02-03T00:00:00.000Z",
+    "updatedAt": "2026-07-19T09:05:00.000Z"
+  },
+  {
+    "id": "co-3",
+    "name": "Transworld Business Advisors — Tampa",
+    "companyType": "Partner",
+    "primaryContactId": "3",
+    "tags": [
+      "Broker network"
+    ],
+    "attributionSource": "service-loanbud-io",
+    "createdAt": "2025-11-20T00:00:00.000Z",
+    "updatedAt": "2026-08-10T11:40:00.000Z",
+    "brokerage": "Transworld Business Advisors",
+    "officeId": "TW-TPA-014",
+    "applyLink": "https://apply.loanbud.com/o/tw-tpa-014"
+  },
+  {
+    "id": "co-4",
+    "name": "Harbor Point Capital",
+    "companyType": "Lender",
+    "tags": [
+      "CRE",
+      "Bridge"
+    ],
+    "attributionSource": "CRM",
+    "createdAt": "2025-09-08T00:00:00.000Z",
+    "updatedAt": "2026-06-28T16:12:00.000Z"
+  },
+  {
+    "id": "co-5",
+    "name": "Golden Crust Bakery Group",
+    "companyType": "Borrower",
+    "primaryContactId": "4",
+    "tags": [
+      "Food service",
+      "Acquisition"
+    ],
+    "attributionSource": "client-biz-buy-sell",
+    "createdAt": "2026-04-11T00:00:00.000Z",
+    "updatedAt": "2026-08-12T08:30:00.000Z"
+  },
+  {
+    "id": "co-6",
+    "name": "Northgate Dental Partners",
+    "companyType": "Borrower",
+    "tags": [
+      "Healthcare"
+    ],
+    "attributionSource": "service-loanbud-hub",
+    "createdAt": "2026-05-30T00:00:00.000Z",
+    "updatedAt": "2026-07-30T13:00:00.000Z"
+  }
+]

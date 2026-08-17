@@ -1,0 +1,73 @@
+[
+  {
+    "id": "meta-black-friday",
+    "name": "Black Friday 2026",
+    "utmCampaign": "black_friday_2026",
+    "channel": "paid-social",
+    "status": "Active",
+    "startDate": "2026-06-01T00:00:00.000Z",
+    "description": "Meta Ads push targeting business owners considering an acquisition.",
+    "createdAt": "2026-05-20T00:00:00.000Z"
+  },
+  {
+    "id": "summer-sba-2026",
+    "name": "Summer SBA 2026",
+    "utmCampaign": "summer_sba_2026",
+    "channel": "paid-search",
+    "status": "Active",
+    "startDate": "2026-06-15T00:00:00.000Z",
+    "description": "Google Ads on SBA 7(a) working-capital terms.",
+    "createdAt": "2026-06-10T00:00:00.000Z"
+  },
+  {
+    "id": "em-monthly-newsletter",
+    "name": "Monthly newsletter",
+    "utmCampaign": "monthly_newsletter",
+    "channel": "email-marketing",
+    "status": "Active",
+    "startDate": "2026-01-01T00:00:00.000Z",
+    "description": "Evergreen monthly send to the full opted-in list.",
+    "createdAt": "2025-12-15T00:00:00.000Z"
+  },
+  {
+    "id": "em-rate-drop",
+    "name": "Rate-drop announcement",
+    "utmCampaign": "rate_drop_announcement",
+    "channel": "email-marketing",
+    "status": "Completed",
+    "startDate": "2026-03-01T00:00:00.000Z",
+    "endDate": "2026-03-31T00:00:00.000Z",
+    "description": "One-off blast when SBA rates moved.",
+    "createdAt": "2026-02-24T00:00:00.000Z"
+  },
+  {
+    "id": "oc-webinar",
+    "name": "Q3 webinar series",
+    "utmCampaign": "q3_webinar_series",
+    "channel": "offline-sources",
+    "status": "Draft",
+    "startDate": "2026-09-01T00:00:00.000Z",
+    "description": "Three-part webinar for brokers on deal structuring.",
+    "createdAt": "2026-07-28T00:00:00.000Z"
+  },
+  {
+    "id": "bbs-checkbox-leads",
+    "name": "BizBuySell checkbox leads",
+    "utmCampaign": "bizbuysell_checkbox",
+    "channel": "referrals",
+    "status": "Active",
+    "startDate": "2025-11-01T00:00:00.000Z",
+    "description": "Leads arriving from the BizBuySell financing checkbox.",
+    "createdAt": "2025-10-20T00:00:00.000Z"
+  },
+  {
+    "id": "bbs-api-leads",
+    "name": "BizBuySell API leads",
+    "utmCampaign": "bizbuysell_api",
+    "channel": "referrals",
+    "status": "Active",
+    "startDate": "2025-11-01T00:00:00.000Z",
+    "description": "Leads pushed directly by the BizBuySell integration.",
+    "createdAt": "2025-10-20T00:00:00.000Z"
+  }
+]

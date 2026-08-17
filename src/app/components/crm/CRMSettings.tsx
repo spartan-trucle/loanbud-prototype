@@ -12,6 +12,13 @@ import { SmsTemplatesTab } from "../email-workflows/settings/SmsTemplatesTab";
 import { VoicemailScriptsTab } from "../email-workflows/settings/VoicemailScriptsTab";
 import { VoicemailSettingsTab } from "../email-workflows/settings/VoicemailSettingsTab";
 import { SenderIdentitiesTab } from "../email-workflows/settings/SenderIdentitiesTab";
+import { CustomFieldsSettings } from "./CustomFieldsSettings";
+import {
+  CalendarSection,
+  CallingSection,
+  NotificationSection,
+  WorkflowPolicySection,
+} from "./CrmSettingsSections";
 
 const TAB_TRIGGER =
   "rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 h-full text-sm";
@@ -212,6 +219,29 @@ function ConfigurationTab() {
   );
 }
 
+// ─── General (sub-tabs mirror frontend-hub: Profile · Calling · Calendar · Workflow Policy)
+
+const INNER_TAB_GENERAL =
+  "rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 h-full text-sm";
+
+function GeneralSection() {
+  return (
+    <Tabs defaultValue="profile" className="flex flex-col flex-1 min-h-0">
+      <TabsList className="shrink-0 justify-start rounded-none border-b border-border bg-transparent px-8 h-9 gap-0">
+        <TabsTrigger value="profile"  className={INNER_TAB_GENERAL}>Profile</TabsTrigger>
+        <TabsTrigger value="calling"  className={INNER_TAB_GENERAL}>Calling</TabsTrigger>
+        <TabsTrigger value="calendar" className={INNER_TAB_GENERAL}>Calendar</TabsTrigger>
+        <TabsTrigger value="policy"   className={INNER_TAB_GENERAL}>Workflow Policy</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="profile"  className="flex-1 min-h-0 mt-0 overflow-y-auto"><GeneralTab /></TabsContent>
+      <TabsContent value="calling"  className="flex-1 min-h-0 mt-0 overflow-y-auto"><CallingSection /></TabsContent>
+      <TabsContent value="calendar" className="flex-1 min-h-0 mt-0 overflow-y-auto"><CalendarSection /></TabsContent>
+      <TabsContent value="policy"   className="flex-1 min-h-0 mt-0 overflow-y-auto"><WorkflowPolicySection /></TabsContent>
+    </Tabs>
+  );
+}
+
 // ─── Root ────────────────────────────────────────────────────────────────────
 
 export function CRMSettings() {
@@ -227,13 +257,17 @@ export function CRMSettings() {
       <Tabs defaultValue="general" className="flex flex-col flex-1 min-h-0">
         <TabsList className="shrink-0 justify-start rounded-none border-b border-border bg-transparent px-8 h-10 gap-0">
           <TabsTrigger value="general"       className={TAB_TRIGGER}>General</TabsTrigger>
+          <TabsTrigger value="custom-fields" className={TAB_TRIGGER}>Custom Fields</TabsTrigger>
           <TabsTrigger value="lifecycle"     className={TAB_TRIGGER}>Lifecycle Stages</TabsTrigger>
           <TabsTrigger value="configuration" className={TAB_TRIGGER}>Configuration</TabsTrigger>
+          <TabsTrigger value="notification"  className={TAB_TRIGGER}>Notification</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general"       className="flex-1 min-h-0 mt-0 overflow-y-auto"><GeneralTab /></TabsContent>
+        <TabsContent value="general"       className="flex-1 min-h-0 mt-0 overflow-hidden flex flex-col"><GeneralSection /></TabsContent>
+        <TabsContent value="custom-fields" className="flex-1 min-h-0 mt-0 overflow-y-auto"><div className="p-6"><CustomFieldsSettings /></div></TabsContent>
         <TabsContent value="lifecycle"     className="flex-1 min-h-0 mt-0 overflow-y-auto"><LifecycleStagesTab /></TabsContent>
         <TabsContent value="configuration" className="flex-1 min-h-0 mt-0 overflow-hidden flex flex-col"><ConfigurationTab /></TabsContent>
+        <TabsContent value="notification"  className="flex-1 min-h-0 mt-0 overflow-y-auto"><NotificationSection /></TabsContent>
       </Tabs>
     </div>
   );

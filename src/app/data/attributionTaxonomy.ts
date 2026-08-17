@@ -17,15 +17,10 @@ import type { AttributionNode } from "../types";
  */
 export const ATTRIBUTION_NODES: AttributionNode[] = [
   // ---- L1: HubSpot's 10 contact traffic sources (channels) ----
-  { id: "organic-search", parentId: null, level: 1, kind: "channel", name: "Organic search" },
   { id: "paid-search", parentId: null, level: 1, kind: "channel", name: "Paid search" },
   { id: "email-marketing", parentId: null, level: 1, kind: "channel", name: "Email marketing" },
-  { id: "organic-social", parentId: null, level: 1, kind: "channel", name: "Organic social" },
   { id: "referrals", parentId: null, level: 1, kind: "channel", name: "Referrals" },
   { id: "paid-social", parentId: null, level: 1, kind: "channel", name: "Paid social" },
-  { id: "direct-traffic", parentId: null, level: 1, kind: "channel", name: "Direct traffic" },
-  { id: "ai-referrals", parentId: null, level: 1, kind: "channel", name: "AI Referrals" },
-  { id: "other-campaigns", parentId: null, level: 1, kind: "channel", name: "Other campaigns" },
   { id: "offline-sources", parentId: null, level: 1, kind: "channel", name: "Offline sources" },
 
   // ==== READY NOW — sources the CRM already carries ==============================
@@ -43,8 +38,6 @@ export const ATTRIBUTION_NODES: AttributionNode[] = [
   { id: "em-rate-drop", parentId: "email-marketing", level: 2, kind: "campaign", name: "Rate-drop announcement", userDefined: true },
 
   // Direct traffic — entrance page (drill-down 1)
-  { id: "dt-homepage", parentId: "direct-traffic", level: 2, kind: "platform", name: "Homepage (typed / bookmark)" },
-  { id: "dt-apply", parentId: "direct-traffic", level: 2, kind: "platform", name: "Apply page (untagged link)" },
 
   // Offline sources — imports / API / manual / phone / events / website form fills
   { id: "off-loanbud-io", parentId: "offline-sources", level: 2, kind: "platform", name: "loanbud.io form" },
@@ -70,21 +63,12 @@ export const ATTRIBUTION_NODES: AttributionNode[] = [
   { id: "bing-ads", parentId: "paid-search", level: 2, kind: "platform", name: "Bing Ads" },
 
   // Organic search — search engine
-  { id: "os-google", parentId: "organic-search", level: 2, kind: "platform", name: "Google" },
-  { id: "os-bing", parentId: "organic-search", level: 2, kind: "platform", name: "Bing" },
 
   // Organic social — social network
-  { id: "osoc-facebook", parentId: "organic-social", level: 2, kind: "platform", name: "Facebook" },
-  { id: "osoc-instagram", parentId: "organic-social", level: 2, kind: "platform", name: "Instagram" },
-  { id: "osoc-linkedin", parentId: "organic-social", level: 2, kind: "platform", name: "LinkedIn" },
 
   // AI Referrals — AI platform
-  { id: "ai-chatgpt", parentId: "ai-referrals", level: 2, kind: "platform", name: "ChatGPT" },
-  { id: "ai-perplexity", parentId: "ai-referrals", level: 2, kind: "platform", name: "Perplexity" },
-  { id: "ai-gemini", parentId: "ai-referrals", level: 2, kind: "platform", name: "Google Gemini" },
 
   // Other campaigns — tracked campaigns that aren't email / paid search / paid social
-  { id: "oc-webinar", parentId: "other-campaigns", level: 2, kind: "campaign", name: "Q3 webinar series", userDefined: true },
 ];
 
 const NODE_BY_ID = new Map(ATTRIBUTION_NODES.map((n) => [n.id, n]));

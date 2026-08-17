@@ -6,8 +6,6 @@ import {
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { AppSidebarSection } from "../../types";
-import { VersionToggle } from "./VersionToggle";
-import { useVersion } from "../../contexts/VersionContext";
 import { useAppData } from "../../contexts/AppDataContext";
 
 interface AppSidebarProps {
@@ -23,16 +21,14 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { version } = useVersion();
   const { taskItems } = useAppData();
 
   // V2 (RFC-008): live open-task badge on the Tasks nav — no notification service needed.
   const isTaskOpen = (status: string) => status !== "completed" && status !== "suspended";
   const openTaskCount =
-    version === "v2" ? taskItems.filter((t) => isTaskOpen(t.status)).length : 0;
+    taskItems.filter((t) => isTaskOpen(t.status)).length;
   const dueTodayCount =
-    version === "v2"
-      ? taskItems.filter((t) => {
+    taskItems.filter((t) => {
           if (!isTaskOpen(t.status)) return false;
           const d = new Date(t.dueDate);
           const now = new Date();
@@ -41,8 +37,7 @@ export function AppSidebar({
             d.getMonth() === now.getMonth() &&
             d.getDate() === now.getDate()
           );
-        }).length
-      : 0;
+        }).length;
   const badgeForId = (id: string): number =>
     id === "crm" || id === "crm-tasks" ? openTaskCount : 0;
 
@@ -168,40 +163,7 @@ export function AppSidebar({
                 const childActive =
                   location.pathname === child.route ||
                   location.pathname.startsWith(child.route + "/");
-                const isV2Only = child.v2Only === true;
-                const disabled = isV2Only && version === "v1";
 
-                if (disabled) {
-                  return (
-                    <Tooltip.Provider key={child.id} delayDuration={300}>
-                      <Tooltip.Root>
-                        <Tooltip.Trigger asChild>
-                          <button
-                            key={child.id}
-                            disabled
-                            className="w-full flex items-center gap-2.5 px-4 py-2 text-sm opacity-35 cursor-not-allowed text-white/70"
-                          >
-                            {ChildIcon && <ChildIcon className="w-4 h-4 shrink-0" />}
-                            <span>{child.label}</span>
-                            <span className="ml-auto text-[9px] font-bold text-[#4ade80]/60 tracking-wider">
-                              V2
-                            </span>
-                          </button>
-                        </Tooltip.Trigger>
-                        <Tooltip.Portal>
-                          <Tooltip.Content
-                            side="right"
-                            sideOffset={8}
-                            className="z-[200] px-3 py-1.5 rounded bg-gray-900 text-white text-xs shadow-xl"
-                          >
-                            Available in V2
-                            <Tooltip.Arrow className="fill-gray-900" />
-                          </Tooltip.Content>
-                        </Tooltip.Portal>
-                      </Tooltip.Root>
-                    </Tooltip.Provider>
-                  );
-                }
 
                 return (
                   <button
@@ -224,11 +186,6 @@ export function AppSidebar({
                         </span>
                       </span>
                     )}
-                    {isV2Only && (
-                      <span className="ml-auto text-[9px] font-bold text-[#4ade80] tracking-wider">
-                        V2
-                      </span>
-                    )}
                   </button>
                 );
               })}
@@ -248,7 +205,7 @@ export function AppSidebar({
       className="flex flex-col bg-[#053f4f] text-white shadow-xl transition-all duration-200 shrink-0"
       style={{ width: collapsed ? 64 : 220 }}
     >
-      {/* Header — logo + version toggle */}
+      {/* Header — logo */}
       <div className="flex flex-col border-b border-white/10 shrink-0">
         <div className={`flex items-center h-14 px-3 ${collapsed ? "justify-center" : ""}`}>
           <div
@@ -268,8 +225,6 @@ export function AppSidebar({
             )}
           </div>
         </div>
-        {/* Version toggle */}
-        <VersionToggle collapsed={collapsed} />
       </div>
 
       {/* Nav */}

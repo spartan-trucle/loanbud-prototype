@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import type { TaskItem } from "@/app/types";
 import { useAppData } from "@/app/contexts/AppDataContext";
-import { useVersion } from "@/app/contexts/VersionContext";
 import { CURRENT_USER } from "@/app/config/featureFlags";
 import { canManageTasks } from "@/app/config/team";
 import { getTaskTypeConfig } from "@/app/lib/taskTypeRegistry";
@@ -67,8 +66,6 @@ export function TaskQueue({
     handleBulkDeleteTask,
   } = useAppData();
 
-  const { version } = useVersion();
-  const isV2 = version === "v2";
   const isAdmin = canManageTasks();
 
   const allTasks = tasksProp ?? taskItems;
@@ -110,7 +107,7 @@ export function TaskQueue({
 
   const now = new Date();
 
-  const useMyTasks = isV2 && myTasksOnly;
+  const useMyTasks = myTasksOnly;
 
   const filtered = allTasks.filter((t) => {
     if (!showCompleted && (t.status === "completed" || t.status === "suspended")) return false;
@@ -258,7 +255,7 @@ export function TaskQueue({
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {/* V2 (RFC-008): My tasks / Team toggle */}
-            {isV2 && (
+            {(
               <div className="flex rounded-lg border border-border overflow-hidden text-xs font-medium">
                 <button
                   onClick={() => { setMyTasksOnly(true); setSelectedTasks([]); }}
@@ -302,7 +299,7 @@ export function TaskQueue({
               Show completed
             </label>
             {/* V2 (RFC-008): admin bulk-create + LO groups */}
-            {isV2 && isAdmin && (
+            {isAdmin && (
               <>
                 <button
                   onClick={() => setShowLoGroups(true)}
@@ -332,7 +329,7 @@ export function TaskQueue({
         </div>
 
         {/* V2 (RFC-008): advanced filter preview (Phase 3) */}
-        {isV2 && <TaskAdvancedFilter />}
+        {<TaskAdvancedFilter />}
 
         {/* Search + view toggle */}
         {onSearchChange && (
@@ -452,7 +449,7 @@ export function TaskQueue({
                             Overdue
                           </span>
                         )}
-                        {isV2 && !overdueFlag && isDueSoon(task) && (
+                        {!overdueFlag && isDueSoon(task) && (
                           <span className="mt-1 inline-block text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded uppercase tracking-tighter">
                             Due soon
                           </span>
@@ -592,7 +589,7 @@ export function TaskQueue({
         />
 
         {/* V2 (RFC-008): admin bulk-create + LO group management */}
-        {isV2 && isAdmin && (
+        {isAdmin && (
           <>
             <BulkCreateTaskModal
               isOpen={showBulkCreate}

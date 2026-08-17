@@ -574,7 +574,7 @@ export function SegmentDetail() {
       {/* Contacts tab */}
       {detailTab === "contacts" && (
       <div className="flex-1 overflow-auto px-8 py-6">
-        <div className="max-w-7xl mx-auto">
+        <div>
         <div className="bg-card border border-border rounded-lg w-fit min-w-full">
           <table className="w-full">
             <thead className="bg-muted/50 border-b border-border sticky top-0">

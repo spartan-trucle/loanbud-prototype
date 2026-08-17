@@ -1,13 +1,15 @@
 import { createContext, useContext, useState } from "react";
 import { toast } from "sonner";
-import type { Contact, ChannelOptOut, EmailRecord, Task, TaskItem, Application, BusinessAcquisitionRecord, Segment, FilterRule, Workflow, WorkflowEnrollment, WorkflowStep, WorkflowStepProgress, ContactActivityRecord, CustomWorkflowStep, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder } from "../types";
+import type { Contact, ChannelOptOut, EmailRecord, Task, TaskItem, Application, BusinessAcquisitionRecord, Segment, FilterRule, Workflow, WorkflowEnrollment, WorkflowStep, WorkflowStepProgress, ContactActivityRecord, CustomWorkflowStep, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder, NewContactInput, ContactImportSource, Campaign, CustomFieldDefinition, LeadFormPayload, LeadIngestResult, Company, ListingRecord } from "../types";
+import { trafficSourceFromUtm } from "../data/trafficSources";
+import { toUtmKey } from "../data/campaignUtils";
 import { store } from "../data/store";
+import type { TeamRole } from "../config/team";
+import { useContentLibrary } from "./useContentLibrary";
 import { computeDayOffsets, mergeSteps, nextFractionalOrder } from "../lib/workflowUtils";
 import { getDefaultOutcomeRules } from "../lib/taskTypeRegistry";
 import { getMatchedListings } from "../lib/segmentUtils";
 import { computeBulkAssignments, type BulkAssignmentResult } from "../lib/bulkTaskUtils";
-import { CURRENT_USER_ROLE, type TeamRole } from "../config/team";
-import { getDescendantFolderIds } from "../components/email-workflows/settings/templateVisibility";
 
 // ── Legacy ID migration helpers ───────────────────────────────────────────────
 // Old tasks used the pattern: taskitem-call-${enrollmentId}-${stepId}
@@ -51,6 +53,34 @@ interface AppDataContextValue {
   handleBulkDeleteTask: (taskIds: string[]) => void;
   // Contact handlers
   handleUpdateContact: (contactId: string, updates: Partial<Contact>) => void;
+  handleCreateContact: (input: NewContactInput) => Contact;
+  // Companies and listings
+  companies: Company[];
+  handleCreateCompany: (input: Omit<Company, "id" | "createdAt">) => Company;
+  listings: ListingRecord[];
+  // Campaigns — a first-class object keyed by utm_campaign
+  campaigns: Campaign[];
+  handleCreateCampaign: (input: Omit<Campaign, "id" | "createdAt">) => Campaign;
+  handleUpdateCampaign: (id: string, updates: Partial<Campaign>) => void;
+  handleDeleteCampaign: (id: string) => void;
+  // Admin-defined custom fields
+  customFieldDefinitions: CustomFieldDefinition[];
+  handleCreateCustomField: (
+    input: Omit<CustomFieldDefinition, "id" | "createdAt">,
+  ) => CustomFieldDefinition;
+  handleUpdateCustomField: (
+    id: string,
+    updates: Partial<CustomFieldDefinition>,
+  ) => void;
+  handleDeleteCustomField: (id: string) => void;
+  /** Ingest a marketing form: creates the contact, resolves traffic source, links or
+   *  creates the campaign, and auto-discovers unknown answer keys as hidden fields. */
+  handleIngestLeadForm: (payload: LeadFormPayload) => LeadIngestResult;
+  /** Bulk-create from an import; rows whose email already exists are skipped. Returns counts. */
+  handleImportContacts: (
+    rows: NewContactInput[],
+    source: ContactImportSource,
+  ) => { imported: number; skipped: number };
   // Standalone task creation
   handleCreateTask: (params: {
     contactId: string;
@@ -167,6 +197,12 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>(store.contacts.read());
+  const [campaigns, setCampaigns] = useState<Campaign[]>(store.campaigns.read());
+  const [companies, setCompanies] = useState<Company[]>(store.companies.read());
+  const [listings] = useState<ListingRecord[]>(store.listings.read());
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState<
+    CustomFieldDefinition[]
+  >(store.customFieldDefinitions.read());
   const [emailHistory, setEmailHistory] = useState<EmailRecord[]>(store.emailHistory.read());
   const [tasks, setTasks] = useState<Task[]>(store.tasks.read());
   const [taskItems, setTaskItems] = useState<TaskItem[]>(store.taskItems.read());
@@ -176,20 +212,49 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [businessAcquisitions] = useState<BusinessAcquisitionRecord[]>(store.businessAcquisitions.read());
   const [workflows, setWorkflows] = useState<Workflow[]>(store.workflows.read());
   const [workflowEnrollments, setWorkflowEnrollments] = useState<WorkflowEnrollment[]>(store.workflowEnrollments.read());
-  const [adminEmailTemplates, setAdminEmailTemplates] = useState<AdminEmailTemplate[]>(store.adminEmailTemplates.read());
-  const [smsTemplates, setSmsTemplates] = useState<SmsTemplate[]>(store.smsTemplates.read());
-  const [voicemailScripts, setVoicemailScripts] = useState<VoicemailScript[]>(store.voicemailScripts.read());
-  const [voicemailSettings, setVoicemailSettings] = useState<VoicemailSettings>(
-    store.voicemailSettings.read()[0] ?? { providerName: "", fromPhoneNumber: "", ringlessEnabled: false, defaultGreeting: "", recordingEnabled: false },
-  );
-  const [senderIdentities, setSenderIdentities] = useState<SenderIdentity[]>(store.senderIdentities.read());
-  const [templateFolders, setTemplateFolders] = useState<TemplateFolder[]>(store.templateFolders.read());
-  const [currentUserRole, setCurrentUserRole] = useState<TeamRole>(CURRENT_USER_ROLE);
-  const [smsCategories, setSmsCategories] = useState<string[]>(store.smsCategories.read());
-  const [voicemailCategories, setVoicemailCategories] = useState<string[]>(store.voicemailCategories.read());
   const [notifications, setNotifications] = useState<Notification[]>(store.notifications.read());
   const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(store.notificationPrefs.read());
   const [loGroups, setLoGroups] = useState<LoGroup[]>(store.loGroups.read());
+
+  // Reusable-content domain lives in its own module; same names, same shape.
+  const {
+    adminEmailTemplates,
+    smsTemplates,
+    voicemailScripts,
+    voicemailSettings,
+    senderIdentities,
+    templateFolders,
+    currentUserRole,
+    smsCategories,
+    voicemailCategories,
+    handleCreateAdminEmailTemplate,
+    handleUpdateAdminEmailTemplate,
+    handleDeleteAdminEmailTemplate,
+    handleSetCurrentUserRole,
+    handleCreateFolder,
+    handleRenameFolder,
+    handleMoveFolder,
+    handleSetFolderVisibility,
+    handleDeleteFolder,
+    handleMoveTemplateToFolder,
+    handleCreateSmsTemplate,
+    handleUpdateSmsTemplate,
+    handleDeleteSmsTemplate,
+    handleCreateVoicemailScript,
+    handleUpdateVoicemailScript,
+    handleDeleteVoicemailScript,
+    handleUpdateVoicemailSettings,
+    handleCreateSenderIdentity,
+    handleUpdateSenderIdentity,
+    handleDeleteSenderIdentity,
+    handleSetDefaultSenderIdentity,
+    handleAddSmsCategory,
+    handleDeleteSmsCategory,
+    handleRenameSmsCategory,
+    handleAddVoicemailCategory,
+    handleDeleteVoicemailCategory,
+    handleRenameVoicemailCategory,
+  } = useContentLibrary();
 
   const handleUpdateNotificationPrefs = (updates: Partial<NotificationPreferences>) => {
     const updated = { ...notificationPrefs, ...updates };
@@ -266,6 +331,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       sentAt: new Date(),
       channel: original.channel ?? "email",
       direction: "outbound",
+      body,
       workflowId: original.workflowId,
       workflowName: original.workflowName,
       stepName: original.stepName,
@@ -950,6 +1016,217 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     store.contacts.write(updated);
   };
 
+  // Import source maps to the CRM's `lead_source` value, matching the backend's importer keys.
+  const LEAD_SOURCE_BY_IMPORT: Record<ContactImportSource, string> = {
+    csv: "csv_import",
+    bizbuysell: "bizbuysell_checkbox",
+  };
+
+  const buildContact = (input: NewContactInput, seq = 0): Contact => ({
+    listingName: "",
+    listingStatus: "New",
+    phone: "",
+    userType: "Borrower",
+    status: "Active",
+    optedOut: false,
+    openReminders: 0,
+    ...input,
+    id: `contact-${Date.now()}-${seq}`,
+    createAt: new Date(),
+  });
+
+  const handleCreateContact = (input: NewContactInput): Contact => {
+    const created = buildContact({ leadSource: "manual", ...input });
+    const updated = [created, ...contacts];
+    setContacts(updated);
+    store.contacts.write(updated);
+    return created;
+  };
+
+  const handleImportContacts = (
+    rows: NewContactInput[],
+    source: ContactImportSource,
+  ): { imported: number; skipped: number } => {
+    // Email is the dedupe key here, same as the real importer.
+    const seen = new Set(contacts.map((c) => c.email.trim().toLowerCase()));
+    const created: Contact[] = [];
+
+    rows.forEach((row, index) => {
+      const email = row.email.trim().toLowerCase();
+      if (!email || seen.has(email)) return;
+      seen.add(email);
+      created.push(
+        buildContact({ leadSource: LEAD_SOURCE_BY_IMPORT[source], ...row }, index),
+      );
+    });
+
+    if (created.length > 0) {
+      const updated = [...created, ...contacts];
+      setContacts(updated);
+      store.contacts.write(updated);
+    }
+
+    return { imported: created.length, skipped: rows.length - created.length };
+  };
+
+  const handleCreateCompany = (input: Omit<Company, "id" | "createdAt">): Company => {
+    const created: Company = {
+      ...input,
+      id: `co-${Date.now()}`,
+      createdAt: new Date(),
+    };
+    const updated = [created, ...companies];
+    setCompanies(updated);
+    store.companies.write(updated);
+    return created;
+  };
+
+  const handleCreateCampaign = (input: Omit<Campaign, "id" | "createdAt">): Campaign => {
+    const created: Campaign = {
+      ...input,
+      utmCampaign: input.utmCampaign || toUtmKey(input.name),
+      id: `campaign-${Date.now()}`,
+      createdAt: new Date(),
+    };
+    const updated = [created, ...campaigns];
+    setCampaigns(updated);
+    store.campaigns.write(updated);
+    return created;
+  };
+
+  const handleUpdateCampaign = (id: string, updates: Partial<Campaign>) => {
+    const updated = campaigns.map((c) => (c.id === id ? { ...c, ...updates } : c));
+    setCampaigns(updated);
+    store.campaigns.write(updated);
+  };
+
+  const handleDeleteCampaign = (id: string) => {
+    const updated = campaigns.filter((c) => c.id !== id);
+    setCampaigns(updated);
+    store.campaigns.write(updated);
+    // Contacts keep their history: clear the pointer rather than deleting the contact.
+    const detached = contacts.map((c) =>
+      c.campaignId === id ? { ...c, campaignId: undefined } : c,
+    );
+    setContacts(detached);
+    store.contacts.write(detached);
+  };
+
+  const handleCreateCustomField = (
+    input: Omit<CustomFieldDefinition, "id" | "createdAt">,
+  ): CustomFieldDefinition => {
+    const created: CustomFieldDefinition = {
+      ...input,
+      id: `cfd-${Date.now()}`,
+      createdAt: new Date(),
+    };
+    const updated = [...customFieldDefinitions, created];
+    setCustomFieldDefinitions(updated);
+    store.customFieldDefinitions.write(updated);
+    return created;
+  };
+
+  const handleUpdateCustomField = (
+    id: string,
+    updates: Partial<CustomFieldDefinition>,
+  ) => {
+    const updated = customFieldDefinitions.map((f) =>
+      f.id === id ? { ...f, ...updates } : f,
+    );
+    setCustomFieldDefinitions(updated);
+    store.customFieldDefinitions.write(updated);
+  };
+
+  const handleDeleteCustomField = (id: string) => {
+    const updated = customFieldDefinitions.filter((f) => f.id !== id);
+    setCustomFieldDefinitions(updated);
+    store.customFieldDefinitions.write(updated);
+  };
+
+  const handleIngestLeadForm = (payload: LeadFormPayload): LeadIngestResult => {
+    const trafficSource = trafficSourceFromUtm(payload.utmSource, payload.utmMedium);
+
+    // Find-or-create the campaign from utm_campaign — marketing never files a ticket
+    // to register a new one.
+    let campaignId: string | null = null;
+    let campaignCreated = false;
+    let nextCampaigns = campaigns;
+    const utmCampaign = payload.utmCampaign?.trim();
+
+    if (utmCampaign) {
+      const existing = campaigns.find(
+        (c) => c.utmCampaign.toLowerCase() === utmCampaign.toLowerCase(),
+      );
+      if (existing) {
+        campaignId = existing.id;
+      } else {
+        const created: Campaign = {
+          id: `campaign-${Date.now()}`,
+          name: utmCampaign,
+          utmCampaign,
+          channel: trafficSource,
+          status: "Active",
+          startDate: new Date(),
+          description: "Auto-created from an inbound lead form.",
+          createdAt: new Date(),
+        };
+        nextCampaigns = [created, ...campaigns];
+        campaignId = created.id;
+        campaignCreated = true;
+      }
+    }
+
+    // Unknown answer keys become hidden definitions: no engineering work to accept a
+    // new form, no UI clutter until an admin turns the field on.
+    const knownKeys = new Set(customFieldDefinitions.map((f) => f.key));
+    const discoveredKeys = Object.keys(payload.answers).filter(
+      (key) => !knownKeys.has(key),
+    );
+    const nextDefinitions: CustomFieldDefinition[] = [
+      ...customFieldDefinitions,
+      ...discoveredKeys.map((key, index) => ({
+        id: `cfd-auto-${Date.now()}-${index}`,
+        key,
+        label: key.replace(/_/g, " ").replace(/^\w/, (ch) => ch.toUpperCase()),
+        type: "text" as const,
+        section: "Questionnaire",
+        isVisible: false,
+        isFilterable: false,
+        isAutoDiscovered: true,
+        createdAt: new Date(),
+      })),
+    ];
+
+    const contact = buildContact({
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      email: payload.email,
+      phone: payload.phone ?? "",
+      userType: "Borrower",
+      leadSource: payload.formName ?? "web_form",
+      originalTrafficSource: trafficSource,
+      sourceDetail1: payload.utmSource || undefined,
+      sourceDetail2: payload.utmContent || payload.utmTerm || undefined,
+      campaignId: campaignId ?? undefined,
+      customFields: payload.answers,
+    });
+
+    const nextContacts = [contact, ...contacts];
+    setContacts(nextContacts);
+    store.contacts.write(nextContacts);
+
+    if (campaignCreated) {
+      setCampaigns(nextCampaigns);
+      store.campaigns.write(nextCampaigns);
+    }
+    if (discoveredKeys.length > 0) {
+      setCustomFieldDefinitions(nextDefinitions);
+      store.customFieldDefinitions.write(nextDefinitions);
+    }
+
+    return { contact, trafficSource, campaignId, campaignCreated, discoveredKeys };
+  };
+
   const handleCreateSegment = (segment: Omit<Segment, "id" | "createdAt" | "lastUpdatedAt">) => {
     const now = new Date();
     const newSegment: Segment = {
@@ -1149,7 +1426,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
     const updatedEnrollments = [...workflowEnrollments, ...newEnrollments];
     const updatedWorkflows = workflows.map((wf) =>
-      wf.id === workflowId ? { ...wf, enrolledCount: wf.enrolledCount + newIds.length } : wf,
+      wf.id === workflowId ? { ...wf, enrolledCount: wf.enrolledCount + newEnrollments.length } : wf,
     );
     const callTasks = buildCallReminderTaskItems(workflow, newEnrollments, contacts);
     const updatedItems = callTasks.length > 0 ? [...taskItems, ...callTasks] : taskItems;
@@ -1904,234 +2181,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     store.workflowEnrollments.write(updated);
   };
 
-  function extractVariables(text: string): string[] {
-    return [...new Set([...text.matchAll(/\{\{([\w.]+)\}\}/g)].map((m) => m[1]))];
-  }
-
-  const handleCreateAdminEmailTemplate = (t: Omit<AdminEmailTemplate, "id" | "createdAt" | "updatedAt">) => {
-    const now = new Date();
-    const created: AdminEmailTemplate = {
-      ...t,
-      id: `etpl-${Date.now()}`,
-      variables: extractVariables(`${t.subject} ${t.body}`),
-      createdAt: now,
-      updatedAt: now,
-    };
-    const updated = [...adminEmailTemplates, created];
-    setAdminEmailTemplates(updated);
-    store.adminEmailTemplates.write(updated);
-  };
-
-  const handleUpdateAdminEmailTemplate = (id: string, updates: Partial<Omit<AdminEmailTemplate, "id" | "createdAt">>) => {
-    const now = new Date();
-    const updated = adminEmailTemplates.map((t) =>
-      t.id === id
-        ? {
-            ...t,
-            ...updates,
-            variables: extractVariables(`${updates.subject ?? t.subject} ${updates.body ?? t.body}`),
-            updatedAt: now,
-          }
-        : t,
-    );
-    setAdminEmailTemplates(updated);
-    store.adminEmailTemplates.write(updated);
-  };
-
-  const handleDeleteAdminEmailTemplate = (id: string) => {
-    const updated = adminEmailTemplates.filter((t) => t.id !== id);
-    setAdminEmailTemplates(updated);
-    store.adminEmailTemplates.write(updated);
-  };
-
-  const persistFolders = (updated: TemplateFolder[]) => {
-    setTemplateFolders(updated);
-    store.templateFolders.write(updated);
-  };
-
-  const handleSetCurrentUserRole = (role: TeamRole) => setCurrentUserRole(role);
-
-  const handleCreateFolder = (name: string, parentId: string | null) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const created: TemplateFolder = {
-      id: `fld-${Date.now()}`,
-      name: trimmed,
-      parentId,
-      visibleToLoanOfficers: true,
-      createdAt: new Date(),
-    };
-    persistFolders([...templateFolders, created]);
-  };
-
-  const handleRenameFolder = (id: string, name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    persistFolders(templateFolders.map((f) => (f.id === id ? { ...f, name: trimmed } : f)));
-  };
-
-  const handleMoveFolder = (id: string, newParentId: string | null) => {
-    if (id === newParentId) return; // no self-parent
-    if (newParentId !== null && getDescendantFolderIds(id, templateFolders).includes(newParentId)) return; // no cycle
-    persistFolders(templateFolders.map((f) => (f.id === id ? { ...f, parentId: newParentId } : f)));
-  };
-
-  const handleSetFolderVisibility = (id: string, visibleToLoanOfficers: boolean) => {
-    persistFolders(templateFolders.map((f) => (f.id === id ? { ...f, visibleToLoanOfficers } : f)));
-  };
-
-  const handleDeleteFolder = (id: string) => {
-    const target = templateFolders.find((f) => f.id === id);
-    if (!target) return;
-    // Promote direct subfolders to the deleted folder's parent.
-    const remaining = templateFolders
-      .filter((f) => f.id !== id)
-      .map((f) => (f.parentId === id ? { ...f, parentId: target.parentId } : f));
-    persistFolders(remaining);
-    // Move this folder's direct templates to Uncategorized (folderId null).
-    const updatedTemplates = adminEmailTemplates.map((t) =>
-      t.folderId === id ? { ...t, folderId: null } : t,
-    );
-    setAdminEmailTemplates(updatedTemplates);
-    store.adminEmailTemplates.write(updatedTemplates);
-  };
-
-  const handleMoveTemplateToFolder = (templateId: string, folderId: string | null) => {
-    const updated = adminEmailTemplates.map((t) => (t.id === templateId ? { ...t, folderId } : t));
-    setAdminEmailTemplates(updated);
-    store.adminEmailTemplates.write(updated);
-  };
-
-  const handleCreateSmsTemplate = (t: Omit<SmsTemplate, "id" | "createdAt" | "updatedAt">) => {
-    const now = new Date();
-    const created: SmsTemplate = {
-      ...t,
-      id: `sms-${Date.now()}`,
-      characterCount: t.message.length,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const updated = [...smsTemplates, created];
-    setSmsTemplates(updated);
-    store.smsTemplates.write(updated);
-  };
-
-  const handleUpdateSmsTemplate = (id: string, updates: Partial<Omit<SmsTemplate, "id" | "createdAt">>) => {
-    const now = new Date();
-    const updated = smsTemplates.map((t) =>
-      t.id === id
-        ? { ...t, ...updates, characterCount: (updates.message ?? t.message).length, updatedAt: now }
-        : t,
-    );
-    setSmsTemplates(updated);
-    store.smsTemplates.write(updated);
-  };
-
-  const handleDeleteSmsTemplate = (id: string) => {
-    const updated = smsTemplates.filter((t) => t.id !== id);
-    setSmsTemplates(updated);
-    store.smsTemplates.write(updated);
-  };
-
-  const handleCreateVoicemailScript = (s: Omit<VoicemailScript, "id" | "createdAt" | "updatedAt">) => {
-    const now = new Date();
-    const created: VoicemailScript = { ...s, id: `vm-${Date.now()}`, createdAt: now, updatedAt: now };
-    const updated = [...voicemailScripts, created];
-    setVoicemailScripts(updated);
-    store.voicemailScripts.write(updated);
-  };
-
-  const handleUpdateVoicemailScript = (id: string, updates: Partial<Omit<VoicemailScript, "id" | "createdAt">>) => {
-    const now = new Date();
-    const updated = voicemailScripts.map((s) =>
-      s.id === id ? { ...s, ...updates, updatedAt: now } : s,
-    );
-    setVoicemailScripts(updated);
-    store.voicemailScripts.write(updated);
-  };
-
-  const handleDeleteVoicemailScript = (id: string) => {
-    const updated = voicemailScripts.filter((s) => s.id !== id);
-    setVoicemailScripts(updated);
-    store.voicemailScripts.write(updated);
-  };
-
-  const handleUpdateVoicemailSettings = (updates: Partial<VoicemailSettings>) => {
-    const merged = { ...voicemailSettings, ...updates };
-    setVoicemailSettings(merged);
-    store.voicemailSettings.write([merged]);
-  };
-
-  const handleCreateSenderIdentity = (s: Omit<SenderIdentity, "id" | "createdAt">) => {
-    const created: SenderIdentity = { ...s, id: `sid-${Date.now()}`, createdAt: new Date() };
-    const updated = s.isDefault
-      ? [...senderIdentities.map((i) => ({ ...i, isDefault: false })), created]
-      : [...senderIdentities, created];
-    setSenderIdentities(updated);
-    store.senderIdentities.write(updated);
-  };
-
-  const handleUpdateSenderIdentity = (id: string, updates: Partial<Omit<SenderIdentity, "id" | "createdAt">>) => {
-    const updated = senderIdentities.map((i) => {
-      if (i.id === id) return { ...i, ...updates };
-      if (updates.isDefault) return { ...i, isDefault: false };
-      return i;
-    });
-    setSenderIdentities(updated);
-    store.senderIdentities.write(updated);
-  };
-
-  const handleDeleteSenderIdentity = (id: string) => {
-    const updated = senderIdentities.filter((i) => i.id !== id);
-    setSenderIdentities(updated);
-    store.senderIdentities.write(updated);
-  };
-
-  const handleSetDefaultSenderIdentity = (id: string) => {
-    const updated = senderIdentities.map((i) => ({ ...i, isDefault: i.id === id }));
-    setSenderIdentities(updated);
-    store.senderIdentities.write(updated);
-  };
-
-  const handleAddSmsCategory = (name: string) => {
-    if (smsCategories.includes(name)) return;
-    const updated = [...smsCategories, name];
-    setSmsCategories(updated);
-    store.smsCategories.write(updated);
-  };
-
-  const handleDeleteSmsCategory = (name: string) => {
-    const updated = smsCategories.filter((c) => c !== name);
-    setSmsCategories(updated);
-    store.smsCategories.write(updated);
-  };
-
-  const handleRenameSmsCategory = (oldName: string, newName: string) => {
-    if (!newName || smsCategories.includes(newName)) return;
-    const updated = smsCategories.map((c) => (c === oldName ? newName : c));
-    setSmsCategories(updated);
-    store.smsCategories.write(updated);
-  };
-
-  const handleAddVoicemailCategory = (name: string) => {
-    if (voicemailCategories.includes(name)) return;
-    const updated = [...voicemailCategories, name];
-    setVoicemailCategories(updated);
-    store.voicemailCategories.write(updated);
-  };
-
-  const handleDeleteVoicemailCategory = (name: string) => {
-    const updated = voicemailCategories.filter((c) => c !== name);
-    setVoicemailCategories(updated);
-    store.voicemailCategories.write(updated);
-  };
-
-  const handleRenameVoicemailCategory = (oldName: string, newName: string) => {
-    if (!newName || voicemailCategories.includes(newName)) return;
-    const updated = voicemailCategories.map((c) => (c === oldName ? newName : c));
-    setVoicemailCategories(updated);
-    store.voicemailCategories.write(updated);
-  };
 
   return (
     <AppDataContext.Provider
@@ -2153,6 +2202,20 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         handleBulkRescheduleTask,
         handleBulkDeleteTask,
         handleUpdateContact,
+        handleCreateContact,
+        handleImportContacts,
+        companies,
+        handleCreateCompany,
+        listings,
+        campaigns,
+        handleCreateCampaign,
+        handleUpdateCampaign,
+        handleDeleteCampaign,
+        customFieldDefinitions,
+        handleCreateCustomField,
+        handleUpdateCustomField,
+        handleDeleteCustomField,
+        handleIngestLeadForm,
         handleCreateTask,
         handleBulkCreateTasks,
         loGroups,

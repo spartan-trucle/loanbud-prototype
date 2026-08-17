@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { Plus, LayoutList, Search } from "lucide-react";
 import { Button } from "../ui/button";
 import { useAppData } from "../../contexts/AppDataContext";
-import { useVersion } from "../../contexts/VersionContext";
 
 const ACTION_TYPE_LABELS: Record<string, string> = {
   email: "Email",
@@ -18,7 +17,6 @@ function formatDate(d: Date): string {
 export function WorkflowList() {
   const navigate = useNavigate();
   const { workflows, workflowEnrollments, emailHistory } = useAppData();
-  const { version } = useVersion();
   const [search, setSearch] = useState("");
 
   const handleRowClick = (id: string) => {
@@ -60,7 +58,7 @@ export function WorkflowList() {
 
       {/* Content */}
       <div className="flex-1 overflow-auto px-8 py-6">
-        <div className="max-w-7xl mx-auto">
+        <div>
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground">
             <LayoutList className="h-12 w-12 opacity-30" />
@@ -76,7 +74,7 @@ export function WorkflowList() {
             <table className="w-full text-sm">
               <thead className="bg-muted/40 border-b border-border">
                 <tr>
-                  {["Name", "Segment", "Status", ...(version === "v2" ? ["Replies"] : []), "Steps", "Activated"].map((col) => (
+                  {["Name", "Segment", "Status", "Replies", "Steps", "Activated"].map((col) => (
                     <th key={col} className="px-5 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wide">
                       {col}
                     </th>
@@ -107,7 +105,7 @@ export function WorkflowList() {
                         {wf.status === "active" ? "Active" : wf.status === "draft" ? "Draft" : "Paused"}
                       </span>
                     </td>
-                    {version === "v2" && (() => {
+                    {(() => {
                       const unread = emailHistory.filter(
                         (e) => e.direction === "inbound" && !e.read &&
                           workflowEnrollments.some((en) => en.workflowId === wf.id && en.contactId === e.contactId),

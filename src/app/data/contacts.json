@@ -243,7 +243,7 @@
       "source": "sms-stop",
       "optedOutAt": "2024-03-20T11:00:00.000Z"
     },
-    "attributionNodeId": "os-google"
+    "attributionNodeId": "off-loanbud-io"
   },
   {
     "id": "8",
@@ -428,7 +428,8 @@
     "city": "San Francisco",
     "state": "CA",
     "zipCode": "94105",
-    "attributionNodeId": "oc-webinar"
+    "attributionNodeId": "off-events",
+    "campaignId": "oc-webinar"
   },
   {
     "id": "14",
@@ -583,7 +584,7 @@
     "city": "Austin",
     "state": "TX",
     "zipCode": "78701",
-    "attributionNodeId": "osoc-facebook"
+    "attributionNodeId": "off-loanbud-io"
   },
   {
     "id": "19",
@@ -612,7 +613,7 @@
     "city": "Albuquerque",
     "state": "NM",
     "zipCode": "87102",
-    "attributionNodeId": "dt-homepage"
+    "attributionNodeId": "off-loanbud-io"
   },
   {
     "id": "20",
@@ -824,6 +825,6 @@
     "city": "Indianapolis",
     "state": "IN",
     "zipCode": "46204",
-    "attributionNodeId": "ai-chatgpt"
+    "attributionNodeId": "off-loanbud-io"
   }
 ]
