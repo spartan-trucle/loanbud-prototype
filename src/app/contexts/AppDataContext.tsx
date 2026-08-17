@@ -4,7 +4,7 @@ import type { Contact, ChannelOptOut, EmailRecord, Task, TaskItem, Application, 
 import { store } from "../data/store";
 import { computeDayOffsets, mergeSteps, nextFractionalOrder } from "../lib/workflowUtils";
 import { getDefaultOutcomeRules } from "../lib/taskTypeRegistry";
-import { getMatchedListings } from "../lib/segmentUtils";
+import { getRunObjects } from "../lib/workflowDimension";
 import { computeBulkAssignments, type BulkAssignmentResult } from "../lib/bulkTaskUtils";
 import { CURRENT_USER_ROLE, type TeamRole } from "../config/team";
 import { getDescendantFolderIds } from "../components/email-workflows/settings/templateVisibility";
@@ -1023,23 +1023,26 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       enrolledCount: 0,
     };
 
-    // Auto-enroll matching segment contacts — one enrollment per contact (CRM-700)
+    // Auto-enroll matching segment contacts — one run per dimension object (HubSpot-style)
     const segment = segments.find((s) => s.id === w.segmentId);
-    const enrolledContactIds =
-      segment && segment.status === "Active"
-        ? contacts.filter((c) => getMatchedListings(c, segment.filters).length > 0).map((c) => c.id)
-        : [];
+    const dimension = w.dimension ?? "CONTACT";
     const startDate = new Date();
-    const newEnrollments: WorkflowEnrollment[] = enrolledContactIds.map((contactId) => ({
-      id: `enroll-${Date.now()}-${contactId}`,
-      workflowId: newWorkflow.id,
-      contactId,
-      startDate,
-      status: "active" as const,
-      stepProgress: newWorkflow.steps.map((s) => ({ stepId: s.id, status: "pending" as const })),
-    }));
+    const newEnrollments: WorkflowEnrollment[] =
+      segment && segment.status === "Active"
+        ? contacts.flatMap((c) =>
+            getRunObjects(c, dimension, segment.filters).map((run, i) => ({
+              id: `enroll-${Date.now()}-${c.id}-${run.objectId ?? "c"}-${i}`,
+              workflowId: newWorkflow.id,
+              contactId: c.id,
+              objectId: run.objectId,
+              startDate,
+              status: "active" as const,
+              stepProgress: newWorkflow.steps.map((s) => ({ stepId: s.id, status: "pending" as const })),
+            })),
+          )
+        : [];
     // enrolledCount shows unique contacts
-    newWorkflow.enrolledCount = enrolledContactIds.length;
+    newWorkflow.enrolledCount = new Set(newEnrollments.map((e) => e.contactId)).size;
 
     const callTasks = buildCallReminderTaskItems(newWorkflow, newEnrollments, contacts);
     const updatedWorkflows = [...workflows, newWorkflow];
@@ -1118,31 +1121,37 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       toast.error("Cannot enroll contacts — the linked segment is inactive.");
       return;
     }
-    // Dedup by contact — one enrollment per (workflow, contact) (CRM-700)
+    // Dedup by (contact, object) — one run per dimension object (HubSpot-style)
+    const dimension = workflow.dimension ?? "CONTACT";
+    const enrollSegmentFilters = enrollSegment?.filters ?? [];
     const alreadyEnrolled = new Set(
-      workflowEnrollments.filter((e) => e.workflowId === workflowId).map((e) => e.contactId),
+      workflowEnrollments
+        .filter((e) => e.workflowId === workflowId)
+        .map((e) => `${e.contactId}::${e.objectId ?? ""}`),
     );
-    const newEntries = entries.filter(({ contactId }) => !alreadyEnrolled.has(contactId));
-    const skipped = entries.length - newEntries.length;
-    if (skipped > 0) {
-      toast.info(`${skipped} enrollment${skipped > 1 ? "s" : ""} skipped — already enrolled`);
-    }
-    if (newEntries.length === 0) return;
-    const newEnrollments: WorkflowEnrollment[] = newEntries.map(({ contactId }) => {
+    const newEnrollments: WorkflowEnrollment[] = entries.flatMap(({ contactId }) => {
+      const contact = contacts.find((c) => c.id === contactId);
+      if (!contact) return [];
       const contactEnrollments = workflowEnrollments.filter((e) => e.contactId === contactId);
       const allPaused = contactEnrollments.length > 0 && contactEnrollments.every((e) => e.status === "paused");
-      return {
-        id: `enroll-${Date.now()}-${contactId}`,
-        workflowId,
-        contactId,
-        startDate,
-        status: allPaused ? ("paused" as const) : ("active" as const),
-        stepProgress: workflow.steps.map((s: WorkflowStep) => ({ stepId: s.id, status: "pending" as const })),
-      };
+      return getRunObjects(contact, dimension, enrollSegmentFilters)
+        .filter((run) => !alreadyEnrolled.has(`${contactId}::${run.objectId ?? ""}`))
+        .map((run, i) => ({
+          id: `enroll-${Date.now()}-${contactId}-${run.objectId ?? "c"}-${i}`,
+          workflowId,
+          contactId,
+          objectId: run.objectId,
+          startDate,
+          status: allPaused ? ("paused" as const) : ("active" as const),
+          stepProgress: workflow.steps.map((s: WorkflowStep) => ({ stepId: s.id, status: "pending" as const })),
+        }));
     });
+    if (newEnrollments.length === 0) return;
     const updatedEnrollments = [...workflowEnrollments, ...newEnrollments];
     const updatedWorkflows = workflows.map((wf) =>
-      wf.id === workflowId ? { ...wf, enrolledCount: wf.enrolledCount + newEnrollments.length } : wf,
+      wf.id === workflowId
+        ? { ...wf, enrolledCount: wf.enrolledCount + new Set(newEnrollments.map((e) => e.contactId)).size }
+        : wf,
     );
     const callTasks = buildCallReminderTaskItems(workflow, newEnrollments, contacts);
     const updatedItems = callTasks.length > 0 ? [...taskItems, ...callTasks] : taskItems;
@@ -1223,26 +1232,35 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
 
     const segmentFilters: FilterRule[] = segment?.filters ?? [];
+    const dimension = workflow.dimension ?? "CONTACT";
+    const enrolledKeys = new Set(
+      workflowEnrollments
+        .filter((e) => e.workflowId === workflowId)
+        .map((e) => `${e.contactId}::${e.objectId ?? ""}`),
+    );
 
-    // Pick up to 8 not-yet-enrolled contacts that match the segment
+    // Pick up to 8 not-yet-enrolled contacts that produce at least one run
     const available = contacts.filter(
-      (c) => !enrolledContactIds.has(c.id) && getMatchedListings(c, segmentFilters).length > 0,
+      (c) => !enrolledContactIds.has(c.id) && getRunObjects(c, dimension, segmentFilters).length > 0,
     );
     const selected = available.slice(0, 8);
 
     const now = new Date();
-    const newEnrollments: WorkflowEnrollment[] = selected.map((contact, idx) => {
+    const newEnrollments: WorkflowEnrollment[] = selected.flatMap((contact, idx) => {
       const startDate = new Date(now.getTime() - idx * 2 * 24 * 60 * 60 * 1000);
       const stepProgress = generateMockProgress(workflow.steps, idx);
       const allDone = stepProgress.every((p) => p.status === "done" || p.status === "skipped");
-      return {
-        id: `enroll-${workflowId}-${contact.id}-${Date.now() + idx}`,
-        workflowId,
-        contactId: contact.id,
-        startDate,
-        status: allDone ? ("completed" as const) : ("active" as const),
-        stepProgress,
-      };
+      return getRunObjects(contact, dimension, segmentFilters)
+        .filter((run) => !enrolledKeys.has(`${contact.id}::${run.objectId ?? ""}`))
+        .map((run, j) => ({
+          id: `enroll-${workflowId}-${contact.id}-${run.objectId ?? "c"}-${Date.now() + idx + j}`,
+          workflowId,
+          contactId: contact.id,
+          objectId: run.objectId,
+          startDate,
+          status: allDone ? ("completed" as const) : ("active" as const),
+          stepProgress,
+        }));
     });
 
     const updatedEnrollments = [...workflowEnrollments, ...newEnrollments];
