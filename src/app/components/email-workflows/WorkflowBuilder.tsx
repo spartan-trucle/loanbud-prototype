@@ -190,7 +190,6 @@ function StepRow({
     message: step.message,
     note: step.note,
     reminderDaysBefore: step.reminderDaysBefore,
-    sendMode: step.sendMode,
   });
 
   useEffect(() => {
@@ -207,7 +206,6 @@ function StepRow({
       message: step.message,
       note: step.note,
       reminderDaysBefore: step.reminderDaysBefore,
-      sendMode: step.sendMode,
     });
   }, [step, isEditing]);
 

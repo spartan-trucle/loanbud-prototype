@@ -9,7 +9,6 @@ import type { ContactActivityRecord, CustomWorkflowStep } from "../../types";
 import { mergeSteps } from "../../lib/workflowUtils";
 import { StepConfigFields, STEP_DEFAULTS, TYPE_ICON_BG, StepTypeIcon, type StepDraft } from "./StepConfigForm";
 import { toast } from "sonner";
-import { effectiveSendMode } from "../../lib/workflowSendScope";
 import { getMatchedListings } from "../../lib/segmentUtils";
 
 const USER_TYPE_AVATAR: Record<string, string> = {
@@ -606,9 +605,6 @@ export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId
                         step.note || step.senderIdentity || step.reminderDaysBefore
                       );
 
-                      const isSendable = step.actionType === "email" || step.actionType === "sms";
-                      const isPerListing = isSendable && effectiveSendMode(step) === "per-listing";
-
                       const timelineNode = isDone && isCompleted ? (
                         <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center shrink-0 z-10 ring-2 ring-background">
                           <CheckCircle2 className="h-4 w-4 text-gray-500" />
@@ -697,16 +693,6 @@ export function WorkflowContactPanel({ open, contactId, enrollmentId, workflowId
                                     new Date(new Date(enrollment.startDate).getTime() + step.dayOffset * 86_400_000)
                                   )}
                                 </span>
-                                {isPerListing && activeListing && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 shrink-0 whitespace-nowrap">
-                                    For {activeListing.name}
-                                  </span>
-                                )}
-                                {isPerListing && !activeListing && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200 shrink-0 whitespace-nowrap">
-                                    No matching listing
-                                  </span>
-                                )}
                                 {hasDetail && !isSkipped && (
                                   isExpanded
                                     ? <ChevronDown className="h-3 w-3 text-muted-foreground shrink-0" />
