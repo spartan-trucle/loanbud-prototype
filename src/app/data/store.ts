@@ -20,14 +20,14 @@ import loGroupsJson from "./loGroups.json";
 
 const KEYS = {
   // v5: RFC-009 seed — attributionNodeId classification on every contact (lead source pyramid)
-  contacts: "loanbudcrm:v5:contacts",
+  contacts: "loanbudcrm:v6:contacts",
   segments: "loanbudcrm:v2:segments",
   taskItems: "loanbudcrm:taskItems",
   emailHistory: "loanbudcrm:v3:emailHistory",
   tasks: "loanbudcrm:tasks",
   applications: "loanbudcrm:applications",
   businessAcquisitions: "loanbudcrm:businessAcquisitions",
-  workflows: "loanbudcrm:v5:workflows",
+  workflows: "loanbudcrm:v6:workflows",
   workflowEnrollments: "loanbudcrm:v6:workflowEnrollments",
   contactActivity: "loanbudcrm:v2:contactActivity",
   adminEmailTemplates: "loanbudcrm:v6:adminEmailTemplates",

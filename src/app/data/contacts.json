@@ -32,6 +32,7 @@
     "state": "NY",
     "zipCode": "10001",
     "linkedApplicationId": "app-001",
+    "applicationIds": ["app-001", "app-003"],
     "companies": [
       "Maple Street Capital"
     ],
@@ -70,6 +71,7 @@
     "state": "CA",
     "zipCode": "94105",
     "linkedApplicationId": "app-002",
+    "applicationIds": ["app-002", "app-004", "app-005"],
     "companies": [
       "Pacific Bridge LLC",
       "Bay Area Ventures"
