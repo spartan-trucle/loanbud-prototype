@@ -266,6 +266,7 @@ function ContactCard({
   onCardClick,
   runLabel,
   runSublabel,
+  objectKind,
 }: {
   contact: Contact;
   enrollmentId: string;
@@ -276,6 +277,7 @@ function ContactCard({
   onCardClick: () => void;
   runLabel: string;
   runSublabel?: string;
+  objectKind: string | null;
 }) {
   const avatarClass = USER_TYPE_AVATAR[contact.userType] ?? "bg-gray-100 text-gray-700";
   const isCompleted = columnId === "completed";
@@ -333,7 +335,7 @@ function ContactCard({
             <p className="text-xs text-muted-foreground truncate mt-0.5">{contact.email}</p>
           </div>
         </div>
-        {(resolvedListing.name || (isCallReminder && !isCompleted)) && (
+        {((objectKind && resolvedListing.name) || (isCallReminder && !isCompleted)) && (
           <>
             <div className="border-t border-border mt-2.5 mb-2" />
           <div className="flex flex-col gap-1.5">
@@ -343,9 +345,9 @@ function ContactCard({
                 <span className="text-xs text-foreground truncate" title={CURRENT_USER}>{CURRENT_USER}</span>
               </div>
             )}
-            {resolvedListing.name && (
+            {objectKind && resolvedListing.name && (
               <div className="flex gap-4 items-start">
-                <span className="text-xs font-medium text-muted-foreground/50 w-[3.25rem] flex-shrink-0 leading-[1.5]">Listing</span>
+                <span className="text-xs font-medium text-muted-foreground/50 w-[3.25rem] flex-shrink-0 leading-[1.5]">{objectKind}</span>
                 <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-1.5">
                     <span className="text-xs text-foreground truncate" title={resolvedListing.name}>{resolvedListing.name}</span>
@@ -355,11 +357,6 @@ function ContactCard({
                       </span>
                     )}
                   </div>
-                  {(contact.listings?.length ?? 1) > 1 && (
-                    <span className="text-xs text-muted-foreground/60">
-                      +{(contact.listings?.length ?? 1) - 1} more
-                    </span>
-                  )}
                 </div>
               </div>
             )}
@@ -434,6 +431,7 @@ function KanbanColumn({
             ? new Date(enrollment.startDate.getTime() + currentStep.dayOffset * 86_400_000)
             : null;
           const run = resolveRunLabel(dimension, enrollment.objectId, contact, applications);
+          const objectKind = dimension === "CONTACT" ? null : dimension === "APPLICATION" ? "Application" : "Listing";
           return (
             <ContactCard
               key={enrollment.id}
@@ -446,6 +444,7 @@ function KanbanColumn({
               onCardClick={() => handleCardClick(contact.id, enrollment.id)}
               runLabel={run.label}
               runSublabel={run.sublabel}
+              objectKind={objectKind}
             />
           );
         })}
