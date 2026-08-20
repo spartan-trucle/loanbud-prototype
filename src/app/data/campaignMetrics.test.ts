@@ -3,6 +3,8 @@ import {
   compareByOutcome,
   funnelFromMembers,
   leadQualityBreakdown,
+  leadsByWeek,
+  mostRecentLeadAt,
   platformSplit,
   totalsAcrossCampaigns,
   type CampaignFunnel,
@@ -276,5 +278,78 @@ describe("platformSplit", () => {
 
   it("returns nothing when no ad account is linked", () => {
     expect(platformSplit({ ...campaign, externalRefs: undefined })).toEqual([]);
+  });
+});
+
+describe("leadsByWeek", () => {
+  // A Thursday, so the window's last week starts Monday 17 Aug.
+  const NOW = new Date(2026, 7, 20);
+
+  function lead(id: string, createAt: Date | string) {
+    return contact(id, { createAt: createAt as Date });
+  }
+
+  it("returns one entry per week, oldest first", () => {
+    const weeks = leadsByWeek([], NOW, 4);
+
+    expect(weeks).toHaveLength(4);
+    expect(weeks.map((w) => w.weekStart.getDate())).toEqual([27, 3, 10, 17]);
+    expect(weeks[3].label).toBe("Aug 17");
+  });
+
+  it("buckets a lead into the week its day falls in", () => {
+    const weeks = leadsByWeek(
+      [
+        lead("a", new Date(2026, 7, 17)), // Monday — first day of the last week
+        lead("b", new Date(2026, 7, 20)), // Thursday — same week
+        lead("c", new Date(2026, 7, 16)), // Sunday — the week before
+      ],
+      NOW,
+      4,
+    );
+
+    expect(weeks[3].count).toBe(2);
+    expect(weeks[2].count).toBe(1);
+  });
+
+  it("keeps empty weeks — the gap is the reading", () => {
+    const weeks = leadsByWeek([lead("a", new Date(2026, 7, 18))], NOW, 4);
+
+    expect(weeks.map((w) => w.count)).toEqual([0, 0, 0, 1]);
+  });
+
+  it("ignores leads older than the window instead of clamping them into week one", () => {
+    // Clamping would draw a two-year-old lead as if it arrived this quarter.
+    const weeks = leadsByWeek([lead("old", new Date(2024, 0, 26))], NOW, 4);
+
+    expect(weeks.every((w) => w.count === 0)).toBe(true);
+  });
+
+  it("reads a seeded ISO string, not just a revived Date", () => {
+    const weeks = leadsByWeek([lead("a", "2026-08-18T00:00:00.000Z")], NOW, 4);
+
+    expect(weeks[3].count).toBe(1);
+  });
+
+  it("is stable: the same members and clock give the same series", () => {
+    const members = [lead("a", new Date(2026, 7, 18))];
+
+    expect(leadsByWeek(members, NOW, 4)).toEqual(leadsByWeek(members, NOW, 4));
+  });
+});
+
+describe("mostRecentLeadAt", () => {
+  it("finds the newest lead", () => {
+    const newest = mostRecentLeadAt([
+      contact("a", { createAt: new Date(2026, 2, 1) }),
+      contact("b", { createAt: new Date(2026, 6, 9) }),
+      contact("c", { createAt: new Date(2025, 11, 31) }),
+    ]);
+
+    expect(newest).toEqual(new Date(2026, 6, 9));
+  });
+
+  it("is undefined when nobody has a date", () => {
+    expect(mostRecentLeadAt([])).toBeUndefined();
   });
 });

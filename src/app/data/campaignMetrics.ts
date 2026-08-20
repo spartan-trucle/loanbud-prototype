@@ -143,6 +143,79 @@ export function compareByOutcome(a: CampaignFunnel, b: CampaignFunnel): number {
   return b.funded - a.funded || b.applications - a.applications;
 }
 
+/** One week of the lead-volume series. */
+export interface LeadWeek {
+  /** Monday that starts the week, local time. */
+  weekStart: Date;
+  /** "Aug 12" — the axis label. */
+  label: string;
+  count: number;
+}
+
+/** Monday 00:00 of the week a date falls in. */
+function startOfWeek(date: Date): Date {
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  return start;
+}
+
+/**
+ * Weekly lead counts for the window ending in the week `now` falls in.
+ *
+ * `now` is a parameter rather than a `new Date()` inside, so the same members always
+ * produce the same series — a chart that changes with the clock cannot be tested.
+ *
+ * Weeks with no leads are kept in the series. The gap *is* the reading: drop the
+ * zeroes and a campaign that stopped a month ago draws identically to one that never
+ * paused, which is the one question a cumulative total already fails to answer.
+ */
+export function leadsByWeek(
+  members: Contact[],
+  now: Date,
+  weeks = 12,
+): LeadWeek[] {
+  const end = startOfWeek(now);
+  const series: LeadWeek[] = [];
+
+  for (let back = weeks - 1; back >= 0; back--) {
+    const weekStart = new Date(end);
+    weekStart.setDate(weekStart.getDate() - back * 7);
+    series.push({
+      weekStart,
+      label: weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      count: 0,
+    });
+  }
+
+  const slotOf = new Map(series.map((week, i) => [week.weekStart.getTime(), i]));
+  for (const created of createdDates(members)) {
+    const slot = slotOf.get(startOfWeek(created).getTime());
+    if (slot !== undefined) series[slot].count += 1;
+  }
+
+  return series;
+}
+
+/** The newest lead in the set — what the "nothing lately" line reports. */
+export function mostRecentLeadAt(members: Contact[]): Date | undefined {
+  let newest: Date | undefined;
+  for (const created of createdDates(members)) {
+    if (!newest || created > newest) newest = created;
+  }
+  return newest;
+}
+
+/** Seeded contacts arrive as ISO strings until the store revives them. */
+function createdDates(members: Contact[]): Date[] {
+  const dates: Date[] = [];
+  for (const member of members) {
+    if (!member.createAt) continue;
+    const created = new Date(member.createAt);
+    if (!Number.isNaN(created.getTime())) dates.push(created);
+  }
+  return dates;
+}
+
 /** One bucket of answers to a questionnaire field. */
 export interface QualityBucket {
   value: string;

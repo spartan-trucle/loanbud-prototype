@@ -1,6 +1,15 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, ChevronRight, Copy, Pencil } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
 import { useAppData } from "@/app/contexts/AppDataContext";
@@ -11,13 +20,17 @@ import {
   formatPercent,
   funnelFromMembers,
   leadQualityBreakdown,
+  leadsByWeek,
+  mostRecentLeadAt,
   platformSplit,
   type CampaignFunnel,
+  type LeadWeek,
 } from "@/app/data/campaignMetrics";
 import {
   leadSourceLabel,
   leadSourceTone,
 } from "@/app/data/attribution";
+import type { Contact } from "@/app/types";
 import { CampaignFormModal } from "./CampaignFormModal";
 
 const TH_CLASS = "px-6 py-3 text-left text-sm text-muted-foreground";
@@ -152,6 +165,8 @@ export function CampaignDetail() {
         <div className="space-y-6">
           <FunnelCard funnel={funnel} />
 
+          <LeadVolumeCard members={members} />
+
           <LeadQualityCard quality={quality} memberCount={members.length} />
 
           {platforms.length > 0 && <PlatformCard platforms={platforms} />}
@@ -197,10 +212,10 @@ export function CampaignDetail() {
                         className="hover:bg-muted/30 transition-colors cursor-pointer"
                         onClick={() => navigate(`/crm/contacts/${contact.id}`)}
                       >
-                        <td className="px-6 py-3 text-sm font-semibold text-blue-600">
+                        <td className="px-6 py-3 text-sm font-semibold text-primary">
                           {contact.firstName} {contact.lastName}
                         </td>
-                        <td className="px-6 py-3 text-sm text-blue-600">
+                        <td className="px-6 py-3 text-sm text-primary">
                           {contact.email}
                         </td>
                         <td className="px-6 py-3">
@@ -253,33 +268,54 @@ function FunnelCard({ funnel }: { funnel: CampaignFunnel }) {
       </p>
 
       <div className="flex flex-wrap items-stretch gap-y-4">
-        <FunnelStep label="Leads" value={funnel.leads} />
+        <FunnelStep label="Leads" value={funnel.leads} of={funnel.leads} />
         <StepArrow rate={funnel.leadToApplication} />
-        <FunnelStep label="Applications" value={funnel.applications} />
+        <FunnelStep
+          label="Applications"
+          value={funnel.applications}
+          of={funnel.leads}
+        />
         <StepArrow rate={funnel.applicationToFunded} />
-        <FunnelStep label="Funded" value={funnel.funded} emphasis />
+        <FunnelStep label="Funded" value={funnel.funded} of={funnel.leads} emphasis />
       </div>
     </div>
   );
 }
 
+/**
+ * One step, drawn to scale against the lead count.
+ *
+ * The bar carries the reading the three numbers do not: 120 → 14 → 3 is a cliff, and
+ * printed as digits it looks like a list. Widths are all measured against Leads, not
+ * against the previous step, so the bars shrink the way the funnel actually does.
+ */
 function FunnelStep({
   label,
   value,
+  of,
   emphasis,
 }: {
   label: string;
   value: number;
+  of: number;
   emphasis?: boolean;
 }) {
+  const share = of > 0 ? value / of : 0;
+
   return (
     <div className="min-w-[132px] flex-1">
       <div className="text-xs text-muted-foreground">{label}</div>
       <div
-        className={`text-2xl mt-0.5 tabular-nums ${emphasis ? "text-emerald-700" : ""}`}
+        className={`text-2xl mt-0.5 tabular-nums ${emphasis ? "text-primary" : ""}`}
         style={{ fontFamily: "var(--font-sans)", fontWeight: 600 }}
       >
         {value}
+      </div>
+      <div className="mt-2 mr-4 h-2 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full ${emphasis ? "bg-primary" : "bg-primary/40"}`}
+          style={{ width: `${Math.round(share * 100)}%` }}
+        />
       </div>
     </div>
   );
@@ -293,6 +329,100 @@ function StepArrow({ rate }: { rate?: number }) {
         {rate === undefined ? "" : formatPercent(rate)}
       </div>
     </div>
+  );
+}
+
+const VOLUME_WEEKS = 12;
+
+/**
+ * Leads per week — the only thing on this page that is not a running total.
+ *
+ * Everything else answers "how did this campaign do overall", which a campaign
+ * switched off two months ago still answers well. This answers "is it producing
+ * now", and an empty run of weeks is the whole point, so the zero weeks are drawn
+ * rather than skipped.
+ */
+function LeadVolumeCard({ members }: { members: Contact[] }) {
+  // Fixed for the life of the view: a series that moves as the clock ticks would
+  // redraw mid-session for no reason.
+  const now = useMemo(() => new Date(), []);
+  const weeks = useMemo(() => leadsByWeek(members, now, VOLUME_WEEKS), [members, now]);
+  const inWindow = weeks.reduce((sum, week) => sum + week.count, 0);
+  const newest = useMemo(() => mostRecentLeadAt(members), [members]);
+
+  return (
+    <div className={`${CARD_CLASS} p-5`}>
+      <h3 className={`${HEADING_CLASS} mb-1`}>Leads per week</h3>
+      <p className="text-xs text-muted-foreground mb-4">
+        The last {VOLUME_WEEKS} weeks. Every other number on this page is a running
+        total, so a campaign that stopped last month still reads as a success there.
+      </p>
+
+      {inWindow === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          No leads in the last {VOLUME_WEEKS} weeks
+          {newest
+            ? ` — the most recent arrived ${newest.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}.`
+            : " — this campaign has never produced one."}
+        </p>
+      ) : (
+        <LeadVolumeChart weeks={weeks} total={inWindow} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Recharts, matching the workflow analytics screens — this is the one card on the page
+ * that is a chart rather than a bar drawn to scale, and it should read as the same
+ * product. The lead-quality bars and the funnel stay CSS: six ResponsiveContainers in
+ * a three-column grid buys nothing, and a scale bar under a number is not a chart.
+ */
+function LeadVolumeChart({ weeks, total }: { weeks: LeadWeek[]; total: number }) {
+  return (
+    <>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={weeks} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+          <XAxis
+            dataKey="label"
+            tick={{ fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            // Every third week: twelve labels collide inside a card.
+            interval={2}
+          />
+          <YAxis
+            allowDecimals={false}
+            tick={{ fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            width={32}
+          />
+          <Tooltip
+            cursor={{ fill: "rgba(15, 23, 42, 0.04)" }}
+            contentStyle={{
+              fontSize: 12,
+              borderRadius: 10,
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            }}
+            labelFormatter={(label: string) => `Week of ${label}`}
+            formatter={(value: number) => [value, "Leads"]}
+          />
+          {/* --primary from theme.css; Recharts takes a value, not a CSS variable. */}
+          <Bar dataKey="count" fill="#0d5e52" radius={[4, 4, 0, 0]} maxBarSize={28} />
+        </BarChart>
+      </ResponsiveContainer>
+
+      <p className="text-xs text-muted-foreground mt-2">
+        {total} lead{total === 1 ? "" : "s"} in the window.
+      </p>
+    </>
   );
 }
 
@@ -336,7 +466,7 @@ function LeadQualityCard({
                     </span>
                     <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-slate-400"
+                        className="h-full rounded-full bg-primary/60"
                         style={{ width: `${Math.round(bucket.share * 100)}%` }}
                       />
                     </div>

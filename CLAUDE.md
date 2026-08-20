@@ -55,8 +55,13 @@ rewrite that sends every path to `index.html`.
   `Campaign.utmCampaign` column — it was one more thing an auto-created Meta campaign
   had to invent, and the invented slug collided as soon as two ad campaigns shared a name
 - `src/app/data/campaignMetrics.ts` — pure funnel (Leads → Applications → Funded) /
-  lead-quality / platform-split maths shared by CampaignList and CampaignDetail. No cost or
-  ROI maths: `Campaign.spend` is deprecated and unread
+  lead-quality / platform-split / `leadsByWeek` maths shared by CampaignList and
+  CampaignDetail. No cost or ROI maths: `Campaign.spend` is deprecated and unread.
+  `leadsByWeek` takes `now` as a parameter rather than reading the clock, so the chart
+  is testable, and it keeps zero-count weeks because the gap is what the cumulative
+  totals cannot show. Only the weekly volume chart uses Recharts, matching the workflow
+  analytics screens; the lead-quality bars and the funnel stay CSS, since six
+  ResponsiveContainers in a grid buy nothing and a scale bar under a number is not a chart
 - `src/app/data/customFieldUsage.ts` — custom-field "used in" counting, archive impact,
   grouping/filtering, and the locked System field descriptors. There is no Custom fields
   settings screen: display name and visibility live on the form's field mappings

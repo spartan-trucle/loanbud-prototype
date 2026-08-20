@@ -20,11 +20,14 @@ import {
 import type { Campaign, CampaignStatus } from "@/app/types";
 import { CampaignFormModal } from "./CampaignFormModal";
 
+// Brand teal for the one status that means "running", the brand accent for the one
+// that means "stopped on purpose", neutral for the two that mean "not running yet" and
+// "over". Four different hues would say the four states are four kinds of thing.
 const STATUS_TONE: Record<CampaignStatus, string> = {
   Draft: "bg-muted text-muted-foreground border-border",
-  Active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  Paused: "bg-amber-50 text-amber-700 border-amber-200",
-  Completed: "bg-slate-50 text-slate-700 border-slate-200",
+  Active: "bg-primary/10 text-primary border-primary/20",
+  Paused: "bg-accent/15 text-amber-700 border-accent/30",
+  Completed: "bg-muted text-muted-foreground border-border",
 };
 
 const TH_CLASS = "px-6 py-4 text-left text-sm text-muted-foreground";
@@ -149,7 +152,7 @@ export function CampaignList() {
                         onClick={() => navigate(`/crm/campaigns/${campaign.id}`)}
                       >
                         <td className="px-6 py-4">
-                          <div className="text-sm font-semibold text-blue-600">
+                          <div className="text-sm font-semibold text-primary">
                             {campaign.name}
                           </div>
                           <code className="text-xs text-muted-foreground">
