@@ -22,8 +22,8 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 3,
-    "createAt": "2024-01-15T00:00:00.000Z",
-    "updatedAt": "2024-03-10T14:22:00.000Z",
+    "createAt": "2026-01-16T00:00:00.000Z",
+    "updatedAt": "2026-01-25T00:00:00.000Z",
     "loanOfficer": "Andy Officer",
     "timeZone": "EST (GMT-5)",
     "preferredLanguage": "English",
@@ -35,7 +35,14 @@
     "companies": [
       "Maple Street Capital"
     ],
-    "attributionNodeId": "bbs-api-leads"
+    "attributionNodeId": "bbs-api-leads",
+    "leadFicoMin": 680,
+    "leadFicoMax": 719,
+    "leadFundingPurpose": "Working capital",
+    "leadRequestedAmount": 100000,
+    "timeFrame": "Immediately",
+    "leadSource": "partner_referral",
+    "attributionSource": "CRM"
   },
   {
     "id": "2",
@@ -60,8 +67,8 @@
     "userType": "Lender",
     "optedOut": false,
     "openReminders": 1,
-    "createAt": "2024-01-16T00:00:00.000Z",
-    "updatedAt": "2024-03-12T09:15:00.000Z",
+    "createAt": "2026-06-02T00:00:00.000Z",
+    "updatedAt": "2026-06-11T00:00:00.000Z",
     "loanOfficer": "Sarah Manager",
     "timeZone": "PST (GMT-8)",
     "preferredLanguage": "English",
@@ -74,7 +81,14 @@
       "Pacific Bridge LLC",
       "Bay Area Ventures"
     ],
-    "attributionNodeId": "off-loanbud-io"
+    "attributionNodeId": "off-loanbud-io",
+    "campaignId": "summer-sba-2026",
+    "leadFicoMin": 720,
+    "leadFundingPurpose": "Real estate",
+    "leadRequestedAmount": 1000000,
+    "timeFrame": "Immediately",
+    "leadSource": "google_ads",
+    "attributionSource": "web-form"
   },
   {
     "id": "3",
@@ -99,8 +113,8 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 4,
-    "createAt": "2024-01-17T00:00:00.000Z",
-    "updatedAt": "2024-03-15T11:00:00.000Z",
+    "createAt": "2026-01-27T00:00:00.000Z",
+    "updatedAt": "2026-02-05T00:00:00.000Z",
     "loanOfficer": "John Lead",
     "timeZone": "EDT (GMT-4)",
     "preferredLanguage": "Spanish",
@@ -111,7 +125,15 @@
     "companies": [
       "Oak Bridge Realty"
     ],
-    "attributionNodeId": "bbs-checkbox-leads"
+    "attributionNodeId": "bbs-checkbox-leads",
+    "linkedApplicationId": "app-009",
+    "leadFicoMin": 680,
+    "leadFicoMax": 719,
+    "leadFundingPurpose": "Working capital",
+    "leadRequestedAmount": 0,
+    "timeFrame": "Immediately",
+    "leadSource": "partner_referral",
+    "attributionSource": "CRM"
   },
   {
     "id": "4",
@@ -131,8 +153,8 @@
     "userType": "Partner",
     "optedOut": true,
     "openReminders": 0,
-    "createAt": "2024-01-18T00:00:00.000Z",
-    "updatedAt": "2024-02-20T16:45:00.000Z",
+    "createAt": "2026-02-09T00:00:00.000Z",
+    "updatedAt": "2026-02-18T00:00:00.000Z",
     "loanOfficer": "Maria Broker",
     "timeZone": "CST (GMT-6)",
     "preferredLanguage": "English",
@@ -150,7 +172,14 @@
       "source": "sms-stop",
       "optedOutAt": "2024-02-15T10:00:00.000Z"
     },
-    "attributionNodeId": "em-nl-march"
+    "attributionNodeId": "em-nl-march",
+    "linkedApplicationId": "app-014",
+    "leadFicoMin": 720,
+    "leadFundingPurpose": "Refinance",
+    "leadRequestedAmount": 500000,
+    "timeFrame": "Immediately",
+    "leadSource": "direct",
+    "attributionSource": "CRM"
   },
   {
     "id": "5",
@@ -170,8 +199,8 @@
     "userType": "Lender",
     "optedOut": false,
     "openReminders": 2,
-    "createAt": "2024-01-19T00:00:00.000Z",
-    "updatedAt": "2024-03-18T08:30:00.000Z",
+    "createAt": "2026-06-11T00:00:00.000Z",
+    "updatedAt": "2026-06-20T00:00:00.000Z",
     "loanOfficer": "Andy Officer",
     "timeZone": "EST (GMT-5)",
     "preferredLanguage": "English",
@@ -180,7 +209,16 @@
     "state": "GA",
     "zipCode": "30301",
     "isDoNotCall": true,
-    "attributionNodeId": "google-ads"
+    "attributionNodeId": "google-ads",
+    "campaignId": "summer-sba-2026",
+    "linkedApplicationId": "app-006",
+    "leadFicoMin": 680,
+    "leadFicoMax": 719,
+    "leadFundingPurpose": "Acquisition",
+    "leadRequestedAmount": 500000,
+    "timeFrame": "2 \u2013 4 weeks",
+    "leadSource": "bizbuysell_checkbox",
+    "attributionSource": "client-biz-buy-sell"
   },
   {
     "id": "6",
@@ -200,8 +238,8 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 4,
-    "createAt": "2024-01-20T00:00:00.000Z",
-    "updatedAt": "2024-03-20T13:10:00.000Z",
+    "createAt": "2026-05-23T00:00:00.000Z",
+    "updatedAt": "2026-06-01T00:00:00.000Z",
     "loanOfficer": "Sarah Manager",
     "timeZone": "MST (GMT-7)",
     "preferredLanguage": "English",
@@ -209,7 +247,15 @@
     "city": "Phoenix",
     "state": "AZ",
     "zipCode": "85001",
-    "attributionNodeId": "meta-bf-bo-video"
+    "attributionNodeId": "meta-bf-bo-video",
+    "linkedApplicationId": "app-003",
+    "leadFicoMin": 600,
+    "leadFicoMax": 639,
+    "leadFundingPurpose": "Working capital",
+    "leadRequestedAmount": 0,
+    "timeFrame": "4 weeks+",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   },
   {
     "id": "7",
@@ -229,8 +275,8 @@
     "userType": "Lender",
     "optedOut": false,
     "openReminders": 1,
-    "createAt": "2024-01-21T00:00:00.000Z",
-    "updatedAt": "2024-03-22T10:00:00.000Z",
+    "createAt": "2026-05-30T00:00:00.000Z",
+    "updatedAt": "2026-06-08T00:00:00.000Z",
     "loanOfficer": "John Lead",
     "timeZone": "CST (GMT-6)",
     "preferredLanguage": "English",
@@ -243,7 +289,15 @@
       "source": "sms-stop",
       "optedOutAt": "2024-03-20T11:00:00.000Z"
     },
-    "attributionNodeId": "off-loanbud-io"
+    "attributionNodeId": "off-loanbud-io",
+    "campaignId": "meta-black-friday",
+    "leadFicoMin": 500,
+    "leadFicoMax": 579,
+    "leadFundingPurpose": "Working capital",
+    "leadRequestedAmount": 0,
+    "timeFrame": "4 weeks+",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   },
   {
     "id": "8",
@@ -263,8 +317,8 @@
     "userType": "Partner",
     "optedOut": false,
     "openReminders": 5,
-    "createAt": "2024-01-22T00:00:00.000Z",
-    "updatedAt": "2024-03-25T15:20:00.000Z",
+    "createAt": "2026-06-19T00:00:00.000Z",
+    "updatedAt": "2026-06-28T00:00:00.000Z",
     "loanOfficer": "Maria Broker",
     "timeZone": "PST (GMT-8)",
     "preferredLanguage": "Spanish",
@@ -272,7 +326,15 @@
     "city": "Los Angeles",
     "state": "CA",
     "zipCode": "90012",
-    "attributionNodeId": "off-wordpress"
+    "attributionNodeId": "off-wordpress",
+    "campaignId": "summer-sba-2026",
+    "linkedApplicationId": "app-010",
+    "leadFicoMin": 720,
+    "leadFundingPurpose": "Acquisition",
+    "leadRequestedAmount": 500000,
+    "timeFrame": "Immediately",
+    "leadSource": "google_ads",
+    "attributionSource": "web-form"
   },
   {
     "id": "9",
@@ -292,8 +354,8 @@
     "userType": "Broker",
     "optedOut": true,
     "openReminders": 0,
-    "createAt": "2024-01-23T00:00:00.000Z",
-    "updatedAt": "2024-02-28T09:00:00.000Z",
+    "createAt": "2026-02-20T00:00:00.000Z",
+    "updatedAt": "2026-03-01T00:00:00.000Z",
     "loanOfficer": "Andy Officer",
     "timeZone": "EST (GMT-5)",
     "preferredLanguage": "English",
@@ -311,7 +373,14 @@
       "source": "manual",
       "optedOutAt": "2024-02-28T09:00:00.000Z"
     },
-    "attributionNodeId": "bbs-api-leads"
+    "attributionNodeId": "bbs-api-leads",
+    "linkedApplicationId": "app-005",
+    "leadFicoMin": 720,
+    "leadFundingPurpose": "Equipment",
+    "leadRequestedAmount": 500000,
+    "timeFrame": "Immediately",
+    "leadSource": "partner_referral",
+    "attributionSource": "CRM"
   },
   {
     "id": "10",
@@ -331,8 +400,8 @@
     "userType": "Lender",
     "optedOut": false,
     "openReminders": 2,
-    "createAt": "2024-01-24T00:00:00.000Z",
-    "updatedAt": "2024-03-28T11:45:00.000Z",
+    "createAt": "2026-06-06T00:00:00.000Z",
+    "updatedAt": "2026-06-15T00:00:00.000Z",
     "loanOfficer": "Sarah Manager",
     "timeZone": "EDT (GMT-4)",
     "preferredLanguage": "English",
@@ -341,7 +410,14 @@
     "state": "PA",
     "zipCode": "19103",
     "isDoNotCall": true,
-    "attributionNodeId": "meta-bf-bo-video"
+    "attributionNodeId": "meta-bf-bo-video",
+    "leadFicoMin": 580,
+    "leadFicoMax": 639,
+    "leadFundingPurpose": "Working capital",
+    "leadRequestedAmount": 0,
+    "timeFrame": "2 \u2013 4 weeks",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   },
   {
     "id": "11",
@@ -361,8 +437,8 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 3,
-    "createAt": "2024-01-25T00:00:00.000Z",
-    "updatedAt": "2024-03-30T14:00:00.000Z",
+    "createAt": "2026-03-04T00:00:00.000Z",
+    "updatedAt": "2026-03-13T00:00:00.000Z",
     "loanOfficer": "John Lead",
     "timeZone": "CST (GMT-6)",
     "preferredLanguage": "English",
@@ -370,7 +446,15 @@
     "city": "Dallas",
     "state": "TX",
     "zipCode": "75201",
-    "attributionNodeId": "bbs-checkbox-leads"
+    "attributionNodeId": "bbs-checkbox-leads",
+    "linkedApplicationId": "app-013",
+    "leadFicoMin": 640,
+    "leadFicoMax": 679,
+    "leadFundingPurpose": "Equipment",
+    "leadRequestedAmount": 250000,
+    "timeFrame": "2 \u2013 4 weeks",
+    "leadSource": "partner_referral",
+    "attributionSource": "CRM"
   },
   {
     "id": "12",
@@ -399,7 +483,9 @@
     "state": "GA",
     "zipCode": "30308",
     "isDoNotCall": true,
-    "attributionNodeId": "off-events"
+    "attributionNodeId": "off-events",
+    "leadSource": "bizbuysell_checkbox",
+    "attributionSource": "client-biz-buy-sell"
   },
   {
     "id": "13",
@@ -419,8 +505,8 @@
     "userType": "Lender",
     "optedOut": false,
     "openReminders": 0,
-    "createAt": "2024-01-27T00:00:00.000Z",
-    "updatedAt": "2024-04-03T16:00:00.000Z",
+    "createAt": "2026-03-16T00:00:00.000Z",
+    "updatedAt": "2026-03-25T00:00:00.000Z",
     "loanOfficer": "Andy Officer",
     "timeZone": "PST (GMT-8)",
     "preferredLanguage": "Spanish",
@@ -429,7 +515,13 @@
     "state": "CA",
     "zipCode": "94105",
     "attributionNodeId": "off-events",
-    "campaignId": "oc-webinar"
+    "campaignId": "oc-webinar",
+    "leadFicoMin": 680,
+    "leadFicoMax": 719,
+    "leadRequestedAmount": 250000,
+    "timeFrame": "4 weeks+",
+    "leadSource": "direct",
+    "attributionSource": "CRM"
   },
   {
     "id": "14",
@@ -449,8 +541,8 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 2,
-    "createAt": "2024-01-28T00:00:00.000Z",
-    "updatedAt": "2024-04-05T10:15:00.000Z",
+    "createAt": "2026-06-14T00:00:00.000Z",
+    "updatedAt": "2026-06-23T00:00:00.000Z",
     "loanOfficer": "Sarah Manager",
     "timeZone": "CDT (GMT-5)",
     "preferredLanguage": "English",
@@ -458,7 +550,14 @@
     "city": "Chicago",
     "state": "IL",
     "zipCode": "60602",
-    "attributionNodeId": "meta-bf-bo-video"
+    "attributionNodeId": "meta-bf-bo-video",
+    "leadFicoMin": 600,
+    "leadFicoMax": 639,
+    "leadFundingPurpose": "Working capital",
+    "leadRequestedAmount": 0,
+    "timeFrame": "4 weeks+",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   },
   {
     "id": "15",
@@ -497,7 +596,9 @@
       "source": "manual",
       "optedOutAt": "2024-03-01T08:00:00.000Z"
     },
-    "attributionNodeId": "off-cold-call"
+    "attributionNodeId": "off-cold-call",
+    "leadSource": "direct",
+    "attributionSource": "CRM"
   },
   {
     "id": "16",
@@ -517,8 +618,8 @@
     "userType": "Partner",
     "optedOut": false,
     "openReminders": 1,
-    "createAt": "2024-01-30T00:00:00.000Z",
-    "updatedAt": "2024-04-08T12:30:00.000Z",
+    "createAt": "2026-03-27T00:00:00.000Z",
+    "updatedAt": "2026-04-05T00:00:00.000Z",
     "loanOfficer": "Maria Broker",
     "timeZone": "EST (GMT-5)",
     "preferredLanguage": "English",
@@ -527,7 +628,14 @@
     "state": "NC",
     "zipCode": "28202",
     "isDoNotCall": true,
-    "attributionNodeId": "em-nl-march"
+    "attributionNodeId": "em-nl-march",
+    "leadFicoMin": 640,
+    "leadFicoMax": 679,
+    "leadFundingPurpose": "Refinance",
+    "leadRequestedAmount": 100000,
+    "timeFrame": "4 weeks+",
+    "leadSource": "direct",
+    "attributionSource": "CRM"
   },
   {
     "id": "17",
@@ -547,8 +655,8 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 4,
-    "createAt": "2024-01-31T00:00:00.000Z",
-    "updatedAt": "2024-04-10T09:45:00.000Z",
+    "createAt": "2026-06-22T00:00:00.000Z",
+    "updatedAt": "2026-07-01T00:00:00.000Z",
     "loanOfficer": "Andy Officer",
     "timeZone": "PST (GMT-8)",
     "preferredLanguage": "English",
@@ -556,7 +664,15 @@
     "city": "Seattle",
     "state": "WA",
     "zipCode": "98101",
-    "attributionNodeId": "meta-bf-bizowners"
+    "attributionNodeId": "meta-bf-bizowners",
+    "linkedApplicationId": "app-015",
+    "leadFicoMin": 600,
+    "leadFicoMax": 639,
+    "leadFundingPurpose": "Acquisition",
+    "leadRequestedAmount": 100000,
+    "timeFrame": "2 \u2013 4 weeks",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   },
   {
     "id": "18",
@@ -584,7 +700,9 @@
     "city": "Austin",
     "state": "TX",
     "zipCode": "78701",
-    "attributionNodeId": "off-loanbud-io"
+    "attributionNodeId": "off-loanbud-io",
+    "leadSource": "direct",
+    "attributionSource": "CRM"
   },
   {
     "id": "19",
@@ -604,8 +722,8 @@
     "userType": "Partner",
     "optedOut": false,
     "openReminders": 0,
-    "createAt": "2024-02-02T00:00:00.000Z",
-    "updatedAt": "2024-04-14T11:00:00.000Z",
+    "createAt": "2026-07-01T00:00:00.000Z",
+    "updatedAt": "2026-07-10T00:00:00.000Z",
     "loanOfficer": "John Lead",
     "timeZone": "MST (GMT-7)",
     "preferredLanguage": "English",
@@ -613,7 +731,12 @@
     "city": "Albuquerque",
     "state": "NM",
     "zipCode": "87102",
-    "attributionNodeId": "off-loanbud-io"
+    "attributionNodeId": "off-loanbud-io",
+    "campaignId": "meta-black-friday",
+    "leadFicoMax": 599,
+    "leadRequestedAmount": 0,
+    "leadSource": "bizbuysell_checkbox",
+    "attributionSource": "client-biz-buy-sell"
   },
   {
     "id": "20",
@@ -633,8 +756,8 @@
     "userType": "Broker",
     "optedOut": true,
     "openReminders": 1,
-    "createAt": "2024-02-03T00:00:00.000Z",
-    "updatedAt": "2024-02-25T07:30:00.000Z",
+    "createAt": "2026-04-08T00:00:00.000Z",
+    "updatedAt": "2026-04-17T00:00:00.000Z",
     "loanOfficer": "Maria Broker",
     "timeZone": "EST (GMT-5)",
     "preferredLanguage": "English",
@@ -652,7 +775,14 @@
       "source": "manual",
       "optedOutAt": "2024-02-25T07:30:00.000Z"
     },
-    "attributionNodeId": "bbs-api-leads"
+    "attributionNodeId": "bbs-api-leads",
+    "leadFicoMin": 600,
+    "leadFicoMax": 639,
+    "leadFundingPurpose": "Working capital",
+    "leadRequestedAmount": 0,
+    "timeFrame": "4 weeks+",
+    "leadSource": "partner_referral",
+    "attributionSource": "CRM"
   },
   {
     "id": "21",
@@ -672,8 +802,8 @@
     "userType": "Lender",
     "optedOut": false,
     "openReminders": 3,
-    "createAt": "2024-02-04T00:00:00.000Z",
-    "updatedAt": "2024-04-16T10:00:00.000Z",
+    "createAt": "2026-06-28T00:00:00.000Z",
+    "updatedAt": "2026-07-07T00:00:00.000Z",
     "loanOfficer": "Andy Officer",
     "timeZone": "EDT (GMT-4)",
     "preferredLanguage": "English",
@@ -681,7 +811,15 @@
     "city": "Richmond",
     "state": "VA",
     "zipCode": "23219",
-    "attributionNodeId": "off-manual"
+    "attributionNodeId": "off-manual",
+    "campaignId": "meta-black-friday",
+    "leadFicoMin": 680,
+    "leadFicoMax": 719,
+    "leadFundingPurpose": "Equipment",
+    "leadRequestedAmount": 50000,
+    "timeFrame": "Immediately",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   },
   {
     "id": "22",
@@ -710,7 +848,9 @@
     "city": "New Orleans",
     "state": "LA",
     "zipCode": "70130",
-    "attributionNodeId": "transworld"
+    "attributionNodeId": "transworld",
+    "leadSource": "direct",
+    "attributionSource": "CRM"
   },
   {
     "id": "23",
@@ -730,8 +870,8 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 2,
-    "createAt": "2024-02-06T00:00:00.000Z",
-    "updatedAt": "2024-04-20T09:00:00.000Z",
+    "createAt": "2026-04-21T00:00:00.000Z",
+    "updatedAt": "2026-04-30T00:00:00.000Z",
     "loanOfficer": "John Lead",
     "timeZone": "PST (GMT-8)",
     "preferredLanguage": "English",
@@ -739,7 +879,13 @@
     "city": "Portland",
     "state": "OR",
     "zipCode": "97201",
-    "attributionNodeId": "bbs-checkbox-leads"
+    "attributionNodeId": "bbs-checkbox-leads",
+    "leadFicoMin": 720,
+    "leadFundingPurpose": "Acquisition",
+    "leadRequestedAmount": 100000,
+    "timeFrame": "4 weeks+",
+    "leadSource": "partner_referral",
+    "attributionSource": "CRM"
   },
   {
     "id": "24",
@@ -759,8 +905,8 @@
     "userType": "Lender",
     "optedOut": false,
     "openReminders": 0,
-    "createAt": "2024-02-07T00:00:00.000Z",
-    "updatedAt": "2024-04-22T14:15:00.000Z",
+    "createAt": "2026-07-19T00:00:00.000Z",
+    "updatedAt": "2026-07-28T00:00:00.000Z",
     "loanOfficer": "Maria Broker",
     "timeZone": "EDT (GMT-4)",
     "preferredLanguage": "English",
@@ -768,7 +914,15 @@
     "city": "Nashville",
     "state": "TN",
     "zipCode": "37201",
-    "attributionNodeId": "off-loanbud-hub"
+    "attributionNodeId": "off-loanbud-hub",
+    "campaignId": "summer-sba-2026",
+    "leadFicoMin": 640,
+    "leadFicoMax": 679,
+    "leadFundingPurpose": "Real estate",
+    "leadRequestedAmount": 250000,
+    "timeFrame": "2 \u2013 4 weeks",
+    "leadSource": "google_ads",
+    "attributionSource": "web-form"
   },
   {
     "id": "25",
@@ -788,15 +942,21 @@
     "userType": "Broker",
     "optedOut": false,
     "openReminders": 4,
-    "createAt": "2024-02-08T00:00:00.000Z",
-    "updatedAt": "2024-04-24T10:30:00.000Z",
+    "createAt": "2026-07-08T00:00:00.000Z",
+    "updatedAt": "2026-07-17T00:00:00.000Z",
     "timeZone": "PST (GMT-8)",
     "preferredLanguage": "English",
     "address": "210 Union Square",
     "city": "San Jose",
     "state": "CA",
     "zipCode": "95110",
-    "attributionNodeId": "meta-bf-bo-video"
+    "attributionNodeId": "meta-bf-bo-video",
+    "leadFicoMin": 720,
+    "leadFundingPurpose": "Acquisition",
+    "leadRequestedAmount": 1200000,
+    "timeFrame": "Immediately",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   },
   {
     "id": "26",
@@ -825,6 +985,88 @@
     "city": "Indianapolis",
     "state": "IN",
     "zipCode": "46204",
-    "attributionNodeId": "off-loanbud-io"
+    "attributionNodeId": "off-loanbud-io",
+    "leadSource": "direct",
+    "attributionSource": "CRM"
+  },
+  {
+    "id": "28",
+    "firstName": "Priya",
+    "lastName": "Raman",
+    "email": "priya.raman@example.com",
+    "phone": "(555) 902-7714",
+    "userType": "Borrower",
+    "createAt": "2026-08-17T00:00:00.000Z",
+    "updatedAt": "2026-08-17T00:00:00.000Z",
+    "optedOut": false,
+    "openReminders": 0,
+    "status": "active",
+    "visibility": "PUBLIC",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
+  },
+  {
+    "id": "29",
+    "firstName": "S.",
+    "lastName": "Chen",
+    "email": "",
+    "phone": "(555) 234-5678",
+    "userType": "Borrower",
+    "createAt": "2026-08-17T00:00:00.000Z",
+    "updatedAt": "2026-08-17T00:00:00.000Z",
+    "optedOut": false,
+    "openReminders": 0,
+    "status": "active",
+    "visibility": "PUBLIC",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
+  },
+  {
+    "id": "30",
+    "firstName": "Dana",
+    "lastName": "Whitfield",
+    "email": "",
+    "phone": "(555) 345-6789",
+    "userType": "Borrower",
+    "createAt": "2026-08-17T00:00:00.000Z",
+    "updatedAt": "2026-08-17T00:00:00.000Z",
+    "optedOut": false,
+    "openReminders": 0,
+    "status": "active",
+    "visibility": "PUBLIC",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
+  },
+  {
+    "id": "31",
+    "firstName": "Chris",
+    "lastName": "Bell",
+    "email": "",
+    "phone": "(555) 100-2200",
+    "userType": "Borrower",
+    "createAt": "2026-08-17T00:00:00.000Z",
+    "updatedAt": "2026-08-17T00:00:00.000Z",
+    "optedOut": false,
+    "openReminders": 0,
+    "status": "active",
+    "visibility": "PUBLIC",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
+  },
+  {
+    "id": "32",
+    "firstName": "Alan",
+    "lastName": "Osei",
+    "email": "a.osei@example.com",
+    "phone": "(555) 771-3390",
+    "userType": "Borrower",
+    "createAt": "2026-08-17T00:00:00.000Z",
+    "updatedAt": "2026-08-17T00:00:00.000Z",
+    "optedOut": false,
+    "openReminders": 0,
+    "status": "active",
+    "visibility": "PUBLIC",
+    "leadSource": "meta_lead_form",
+    "attributionSource": "service-meta-lead-ads"
   }
 ]

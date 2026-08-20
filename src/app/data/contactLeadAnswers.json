@@ -1,0 +1,886 @@
+[
+  {
+    "id": "cla-001",
+    "contactId": "1",
+    "targetKey": "self_reported_fico",
+    "value": "680 \u2013 719",
+    "valueMin": 680,
+    "valueMax": 719,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-002",
+    "contactId": "1",
+    "targetKey": "requested_amount",
+    "value": "$100k \u2013 $250k",
+    "valueMin": 100000,
+    "valueMax": 250000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-003",
+    "contactId": "1",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-004",
+    "contactId": "1",
+    "targetKey": "years_in_business",
+    "value": "7",
+    "valueMin": 7,
+    "valueMax": 7,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-005",
+    "contactId": "1",
+    "targetKey": "funding_purpose",
+    "value": "Working capital",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-006",
+    "contactId": "2",
+    "targetKey": "self_reported_fico",
+    "value": "720+",
+    "valueMin": 720,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-02T00:00:00.000Z"
+  },
+  {
+    "id": "cla-007",
+    "contactId": "2",
+    "targetKey": "requested_amount",
+    "value": "Over $1M",
+    "valueMin": 1000000,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-02T00:00:00.000Z"
+  },
+  {
+    "id": "cla-008",
+    "contactId": "2",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-02T00:00:00.000Z"
+  },
+  {
+    "id": "cla-009",
+    "contactId": "2",
+    "targetKey": "funding_purpose",
+    "value": "Real estate",
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-02T00:00:00.000Z"
+  },
+  {
+    "id": "cla-010",
+    "contactId": "3",
+    "targetKey": "self_reported_fico",
+    "value": "680 \u2013 719",
+    "valueMin": 680,
+    "valueMax": 719,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-011",
+    "contactId": "3",
+    "targetKey": "requested_amount",
+    "value": "Under $100k",
+    "valueMax": 100000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-012",
+    "contactId": "3",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-013",
+    "contactId": "3",
+    "targetKey": "years_in_business",
+    "value": "4",
+    "valueMin": 4,
+    "valueMax": 4,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-014",
+    "contactId": "3",
+    "targetKey": "funding_purpose",
+    "value": "Working capital",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-01-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-015",
+    "contactId": "4",
+    "targetKey": "self_reported_fico",
+    "value": "720+",
+    "valueMin": 720,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-09T00:00:00.000Z"
+  },
+  {
+    "id": "cla-016",
+    "contactId": "4",
+    "targetKey": "requested_amount",
+    "value": "$500k \u2013 $1M",
+    "valueMin": 500000,
+    "valueMax": 1000000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-09T00:00:00.000Z"
+  },
+  {
+    "id": "cla-017",
+    "contactId": "4",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-09T00:00:00.000Z"
+  },
+  {
+    "id": "cla-018",
+    "contactId": "4",
+    "targetKey": "years_in_business",
+    "value": "12",
+    "valueMin": 12,
+    "valueMax": 12,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-09T00:00:00.000Z"
+  },
+  {
+    "id": "cla-019",
+    "contactId": "4",
+    "targetKey": "funding_purpose",
+    "value": "Refinance",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-09T00:00:00.000Z"
+  },
+  {
+    "id": "cla-020",
+    "contactId": "5",
+    "targetKey": "self_reported_fico",
+    "value": "680 \u2013 719",
+    "valueMin": 680,
+    "valueMax": 719,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-11T00:00:00.000Z"
+  },
+  {
+    "id": "cla-021",
+    "contactId": "5",
+    "targetKey": "requested_amount",
+    "value": "$500k \u2013 $1M",
+    "valueMin": 500000,
+    "valueMax": 1000000,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-11T00:00:00.000Z"
+  },
+  {
+    "id": "cla-022",
+    "contactId": "5",
+    "targetKey": "funding_timeline",
+    "value": "2 \u2013 4 weeks",
+    "valueMin": 14,
+    "valueMax": 28,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-11T00:00:00.000Z"
+  },
+  {
+    "id": "cla-023",
+    "contactId": "5",
+    "targetKey": "funding_purpose",
+    "value": "Acquisition",
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-11T00:00:00.000Z"
+  },
+  {
+    "id": "cla-024",
+    "contactId": "6",
+    "targetKey": "self_reported_fico",
+    "value": "600 \u2013 639",
+    "valueMin": 600,
+    "valueMax": 639,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-23T00:00:00.000Z"
+  },
+  {
+    "id": "cla-025",
+    "contactId": "6",
+    "targetKey": "requested_amount",
+    "value": "Under $100k",
+    "valueMax": 100000,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-23T00:00:00.000Z"
+  },
+  {
+    "id": "cla-026",
+    "contactId": "6",
+    "targetKey": "funding_timeline",
+    "value": "4 weeks+",
+    "valueMin": 29,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-23T00:00:00.000Z"
+  },
+  {
+    "id": "cla-027",
+    "contactId": "6",
+    "targetKey": "funding_purpose",
+    "value": "Working capital",
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-23T00:00:00.000Z"
+  },
+  {
+    "id": "cla-028",
+    "contactId": "7",
+    "targetKey": "self_reported_fico",
+    "value": "500-579_(very_poor)",
+    "valueMin": 500,
+    "valueMax": 579,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-30T00:00:00.000Z"
+  },
+  {
+    "id": "cla-029",
+    "contactId": "7",
+    "targetKey": "requested_amount",
+    "value": "Under $100k",
+    "valueMax": 100000,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-30T00:00:00.000Z"
+  },
+  {
+    "id": "cla-030",
+    "contactId": "7",
+    "targetKey": "funding_timeline",
+    "value": "4 weeks+",
+    "valueMin": 29,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-30T00:00:00.000Z"
+  },
+  {
+    "id": "cla-031",
+    "contactId": "7",
+    "targetKey": "funding_purpose",
+    "value": "Working capital",
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-05-30T00:00:00.000Z"
+  },
+  {
+    "id": "cla-032",
+    "contactId": "8",
+    "targetKey": "self_reported_fico",
+    "value": "720+",
+    "valueMin": 720,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-033",
+    "contactId": "8",
+    "targetKey": "requested_amount",
+    "value": "$500k \u2013 $1M",
+    "valueMin": 500000,
+    "valueMax": 1000000,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-034",
+    "contactId": "8",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-035",
+    "contactId": "8",
+    "targetKey": "funding_purpose",
+    "value": "Acquisition",
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-036",
+    "contactId": "9",
+    "targetKey": "self_reported_fico",
+    "value": "720+",
+    "valueMin": 720,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-20T00:00:00.000Z"
+  },
+  {
+    "id": "cla-037",
+    "contactId": "9",
+    "targetKey": "requested_amount",
+    "value": "$500k \u2013 $1M",
+    "valueMin": 500000,
+    "valueMax": 1000000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-20T00:00:00.000Z"
+  },
+  {
+    "id": "cla-038",
+    "contactId": "9",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-20T00:00:00.000Z"
+  },
+  {
+    "id": "cla-039",
+    "contactId": "9",
+    "targetKey": "years_in_business",
+    "value": "9",
+    "valueMin": 9,
+    "valueMax": 9,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-20T00:00:00.000Z"
+  },
+  {
+    "id": "cla-040",
+    "contactId": "9",
+    "targetKey": "funding_purpose",
+    "value": "Equipment",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-02-20T00:00:00.000Z"
+  },
+  {
+    "id": "cla-041",
+    "contactId": "10",
+    "targetKey": "self_reported_fico",
+    "value": "580-639_(poor)",
+    "valueMin": 580,
+    "valueMax": 639,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-06T00:00:00.000Z"
+  },
+  {
+    "id": "cla-042",
+    "contactId": "10",
+    "targetKey": "requested_amount",
+    "value": "Under $100k",
+    "valueMax": 100000,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-06T00:00:00.000Z"
+  },
+  {
+    "id": "cla-043",
+    "contactId": "10",
+    "targetKey": "funding_timeline",
+    "value": "2 \u2013 4 weeks",
+    "valueMin": 14,
+    "valueMax": 28,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-06T00:00:00.000Z"
+  },
+  {
+    "id": "cla-044",
+    "contactId": "10",
+    "targetKey": "funding_purpose",
+    "value": "Working capital",
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-06T00:00:00.000Z"
+  },
+  {
+    "id": "cla-045",
+    "contactId": "11",
+    "targetKey": "self_reported_fico",
+    "value": "640 \u2013 679",
+    "valueMin": 640,
+    "valueMax": 679,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-04T00:00:00.000Z"
+  },
+  {
+    "id": "cla-046",
+    "contactId": "11",
+    "targetKey": "requested_amount",
+    "value": "$250k \u2013 $500k",
+    "valueMin": 250000,
+    "valueMax": 500000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-04T00:00:00.000Z"
+  },
+  {
+    "id": "cla-047",
+    "contactId": "11",
+    "targetKey": "funding_timeline",
+    "value": "2 \u2013 4 weeks",
+    "valueMin": 14,
+    "valueMax": 28,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-04T00:00:00.000Z"
+  },
+  {
+    "id": "cla-048",
+    "contactId": "11",
+    "targetKey": "years_in_business",
+    "value": "3",
+    "valueMin": 3,
+    "valueMax": 3,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-04T00:00:00.000Z"
+  },
+  {
+    "id": "cla-049",
+    "contactId": "11",
+    "targetKey": "funding_purpose",
+    "value": "Equipment",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-04T00:00:00.000Z"
+  },
+  {
+    "id": "cla-050",
+    "contactId": "13",
+    "targetKey": "self_reported_fico",
+    "value": "680 \u2013 719",
+    "valueMin": 680,
+    "valueMax": 719,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-051",
+    "contactId": "13",
+    "targetKey": "requested_amount",
+    "value": "$250k \u2013 $500k",
+    "valueMin": 250000,
+    "valueMax": 500000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-052",
+    "contactId": "13",
+    "targetKey": "funding_timeline",
+    "value": "4 weeks+",
+    "valueMin": 29,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-16T00:00:00.000Z"
+  },
+  {
+    "id": "cla-053",
+    "contactId": "14",
+    "targetKey": "self_reported_fico",
+    "value": "600 \u2013 639",
+    "valueMin": 600,
+    "valueMax": 639,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-14T00:00:00.000Z"
+  },
+  {
+    "id": "cla-054",
+    "contactId": "14",
+    "targetKey": "requested_amount",
+    "value": "Under $100k",
+    "valueMax": 100000,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-14T00:00:00.000Z"
+  },
+  {
+    "id": "cla-055",
+    "contactId": "14",
+    "targetKey": "funding_timeline",
+    "value": "4 weeks+",
+    "valueMin": 29,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-14T00:00:00.000Z"
+  },
+  {
+    "id": "cla-056",
+    "contactId": "14",
+    "targetKey": "funding_purpose",
+    "value": "Working capital",
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-14T00:00:00.000Z"
+  },
+  {
+    "id": "cla-057",
+    "contactId": "16",
+    "targetKey": "self_reported_fico",
+    "value": "640 \u2013 679",
+    "valueMin": 640,
+    "valueMax": 679,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-058",
+    "contactId": "16",
+    "targetKey": "requested_amount",
+    "value": "$100k \u2013 $250k",
+    "valueMin": 100000,
+    "valueMax": 250000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-059",
+    "contactId": "16",
+    "targetKey": "funding_timeline",
+    "value": "4 weeks+",
+    "valueMin": 29,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-060",
+    "contactId": "16",
+    "targetKey": "years_in_business",
+    "value": "6",
+    "valueMin": 6,
+    "valueMax": 6,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-061",
+    "contactId": "16",
+    "targetKey": "funding_purpose",
+    "value": "Refinance",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-03-27T00:00:00.000Z"
+  },
+  {
+    "id": "cla-062",
+    "contactId": "17",
+    "targetKey": "self_reported_fico",
+    "value": "600 \u2013 639",
+    "valueMin": 600,
+    "valueMax": 639,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-22T00:00:00.000Z"
+  },
+  {
+    "id": "cla-063",
+    "contactId": "17",
+    "targetKey": "requested_amount",
+    "value": "$100k \u2013 $250k",
+    "valueMin": 100000,
+    "valueMax": 250000,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-22T00:00:00.000Z"
+  },
+  {
+    "id": "cla-064",
+    "contactId": "17",
+    "targetKey": "funding_timeline",
+    "value": "2 \u2013 4 weeks",
+    "valueMin": 14,
+    "valueMax": 28,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-22T00:00:00.000Z"
+  },
+  {
+    "id": "cla-065",
+    "contactId": "17",
+    "targetKey": "funding_purpose",
+    "value": "Acquisition",
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-06-22T00:00:00.000Z"
+  },
+  {
+    "id": "cla-066",
+    "contactId": "19",
+    "targetKey": "self_reported_fico",
+    "value": "Below 600",
+    "valueMax": 600,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-07-01T00:00:00.000Z"
+  },
+  {
+    "id": "cla-067",
+    "contactId": "19",
+    "targetKey": "requested_amount",
+    "value": "Under $100k",
+    "valueMax": 100000,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-07-01T00:00:00.000Z"
+  },
+  {
+    "id": "cla-068",
+    "contactId": "20",
+    "targetKey": "self_reported_fico",
+    "value": "600 \u2013 639",
+    "valueMin": 600,
+    "valueMax": 639,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-069",
+    "contactId": "20",
+    "targetKey": "requested_amount",
+    "value": "Under $100k",
+    "valueMax": 100000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-070",
+    "contactId": "20",
+    "targetKey": "funding_timeline",
+    "value": "4 weeks+",
+    "valueMin": 29,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-071",
+    "contactId": "20",
+    "targetKey": "funding_purpose",
+    "value": "Working capital",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-072",
+    "contactId": "21",
+    "targetKey": "self_reported_fico",
+    "value": "680 \u2013 719",
+    "valueMin": 680,
+    "valueMax": 719,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-28T00:00:00.000Z"
+  },
+  {
+    "id": "cla-073",
+    "contactId": "21",
+    "targetKey": "requested_amount",
+    "value": "50,000",
+    "valueMin": 50000,
+    "valueMax": 50000,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-28T00:00:00.000Z"
+  },
+  {
+    "id": "cla-074",
+    "contactId": "21",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-28T00:00:00.000Z"
+  },
+  {
+    "id": "cla-075",
+    "contactId": "21",
+    "targetKey": "funding_purpose",
+    "value": "Equipment",
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-06-28T00:00:00.000Z"
+  },
+  {
+    "id": "cla-076",
+    "contactId": "23",
+    "targetKey": "self_reported_fico",
+    "value": "720+",
+    "valueMin": 720,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "id": "cla-077",
+    "contactId": "23",
+    "targetKey": "requested_amount",
+    "value": "$100k \u2013 $250k",
+    "valueMin": 100000,
+    "valueMax": 250000,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "id": "cla-078",
+    "contactId": "23",
+    "targetKey": "funding_timeline",
+    "value": "4 weeks+",
+    "valueMin": 29,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "id": "cla-079",
+    "contactId": "23",
+    "targetKey": "years_in_business",
+    "value": "5",
+    "valueMin": 5,
+    "valueMax": 5,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "id": "cla-080",
+    "contactId": "23",
+    "targetKey": "funding_purpose",
+    "value": "Acquisition",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-04-21T00:00:00.000Z"
+  },
+  {
+    "id": "cla-081",
+    "contactId": "24",
+    "targetKey": "self_reported_fico",
+    "value": "640 \u2013 679",
+    "valueMin": 640,
+    "valueMax": 679,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-082",
+    "contactId": "24",
+    "targetKey": "requested_amount",
+    "value": "$250k \u2013 $500k",
+    "valueMin": 250000,
+    "valueMax": 500000,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-083",
+    "contactId": "24",
+    "targetKey": "funding_timeline",
+    "value": "2 \u2013 4 weeks",
+    "valueMin": 14,
+    "valueMax": 28,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-084",
+    "contactId": "24",
+    "targetKey": "funding_purpose",
+    "value": "Real estate",
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-19T00:00:00.000Z"
+  },
+  {
+    "id": "cla-085",
+    "contactId": "25",
+    "targetKey": "self_reported_fico",
+    "value": "720+",
+    "valueMin": 720,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-086",
+    "contactId": "25",
+    "targetKey": "requested_amount",
+    "value": "1,200,000",
+    "valueMin": 1200000,
+    "valueMax": 1200000,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-087",
+    "contactId": "25",
+    "targetKey": "funding_timeline",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-088",
+    "contactId": "25",
+    "targetKey": "funding_purpose",
+    "value": "Acquisition",
+    "leadFormId": "form-more-volume-v3",
+    "answeredAt": "2026-07-08T00:00:00.000Z"
+  },
+  {
+    "id": "cla-089",
+    "contactId": "28",
+    "targetKey": "what_is_the_purpose_of_the_loan?",
+    "value": "Acquisition",
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-08-17T00:00:00.000Z"
+  },
+  {
+    "id": "cla-090",
+    "contactId": "28",
+    "targetKey": "how_much_funding_do_you_need?_(enter_any_amount)",
+    "value": "250000",
+    "valueMin": 250000,
+    "valueMax": 250000,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-08-17T00:00:00.000Z"
+  },
+  {
+    "id": "cla-091",
+    "contactId": "29",
+    "targetKey": "what_is_the_purpose_of_the_loan?",
+    "value": "Equipment",
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-08-17T00:00:00.000Z"
+  },
+  {
+    "id": "cla-092",
+    "contactId": "29",
+    "targetKey": "how_long_have_you_been_in_business?",
+    "value": "3-5",
+    "valueMin": 3,
+    "valueMax": 5,
+    "leadFormId": "form-fasttrack-2026",
+    "answeredAt": "2026-08-17T00:00:00.000Z"
+  },
+  {
+    "id": "cla-093",
+    "contactId": "30",
+    "targetKey": "what_is_the_purpose_of_the_loan?",
+    "value": "Refinance",
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-08-17T00:00:00.000Z"
+  },
+  {
+    "id": "cla-094",
+    "contactId": "31",
+    "targetKey": "what_is_your_fico\u00ae_credit_score?",
+    "value": "640-699",
+    "valueMin": 640,
+    "valueMax": 699,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-08-17T00:00:00.000Z"
+  },
+  {
+    "id": "cla-095",
+    "contactId": "32",
+    "targetKey": "what_is_your_timeline_for_accessing_the_funds?",
+    "value": "Immediately",
+    "valueMin": 0,
+    "valueMax": 13,
+    "leadFormId": "form-rich-creative-v2",
+    "answeredAt": "2026-08-17T00:00:00.000Z"
+  }
+]

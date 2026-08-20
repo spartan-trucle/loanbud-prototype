@@ -49,7 +49,8 @@ function defaultDue(): string {
  * DNC/consent warn-and-choose exclude toggle.
  */
 export function BulkCreateTaskModal({ isOpen, onClose, onManageGroups }: BulkCreateTaskModalProps) {
-  const { contacts, segments, loGroups, handleBulkCreateTasks } = useAppData();
+  const { contacts, segments, loGroups, applications, handleBulkCreateTasks } =
+    useAppData();
 
   const [targetMode, setTargetMode] = useState<TargetMode>("segment");
   const [segmentId, setSegmentId] = useState("");
@@ -71,11 +72,11 @@ export function BulkCreateTaskModal({ isOpen, onClose, onManageGroups }: BulkCre
   const targetContacts: Contact[] = useMemo(() => {
     if (targetMode === "segment") {
       const seg = segments.find((s) => s.id === segmentId);
-      return seg ? contactsInSegment(seg, contacts) : [];
+      return seg ? contactsInSegment(seg, contacts, applications) : [];
     }
     const idSet = new Set(selectedContactIds);
     return contacts.filter((c) => idSet.has(c.id));
-  }, [targetMode, segmentId, selectedContactIds, segments, contacts]);
+  }, [targetMode, segmentId, selectedContactIds, segments, contacts, applications]);
 
   const flagsForChannel = (c: Contact): boolean => {
     if (taskType === "Call") return isDoNotCall(c);

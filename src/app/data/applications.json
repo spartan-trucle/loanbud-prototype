@@ -9,19 +9,30 @@
     "assigneeName": "Kaitlyn McKnight",
     "loanAmount": 250000,
     "createdAt": "2025-01-10T00:00:00.000Z",
-    "updatedAt": "2025-03-15T00:00:00.000Z"
+    "updatedAt": "2025-03-15T00:00:00.000Z",
+    "selfReportedFicoMin": 700,
+    "selfReportedFicoMax": 719,
+    "fundingPurpose": "Acquisition",
+    "requestedAmount": 250000,
+    "timeFrame": "2 – 4 weeks"
   },
   {
     "id": "app-002",
     "applicationNumber": "00002",
-    "stage": "Completed Initial Application",
+    "stage": "Funded",
     "loanPurpose": "Buy Commercial Real Estate",
     "branchName": "Peachtree Capital Group LLC",
     "loanOfficerName": "Marcus Webb",
     "assigneeName": "Sandra Torres",
     "loanAmount": 1200000,
     "createdAt": "2025-01-14T00:00:00.000Z",
-    "updatedAt": "2025-03-20T00:00:00.000Z"
+    "updatedAt": "2025-04-18T00:00:00.000Z",
+    "fundedAt": "2025-04-18T00:00:00.000Z",
+    "selfReportedFicoMin": 760,
+    "selfReportedFicoMax": 779,
+    "fundingPurpose": "Real estate",
+    "requestedAmount": 1200000,
+    "timeFrame": "4 weeks+"
   },
   {
     "id": "app-003",
@@ -33,7 +44,12 @@
     "assigneeName": "Kaitlyn McKnight",
     "loanAmount": 85000,
     "createdAt": "2025-01-18T00:00:00.000Z",
-    "updatedAt": "2025-02-01T00:00:00.000Z"
+    "updatedAt": "2025-02-01T00:00:00.000Z",
+    "selfReportedFicoMin": 660,
+    "selfReportedFicoMax": 679,
+    "fundingPurpose": "Working capital",
+    "requestedAmount": 85000,
+    "timeFrame": "Immediately"
   },
   {
     "id": "app-004",
@@ -45,7 +61,12 @@
     "assigneeName": "James Ruiz",
     "loanAmount": 420000,
     "createdAt": "2025-01-22T00:00:00.000Z",
-    "updatedAt": "2025-03-28T00:00:00.000Z"
+    "updatedAt": "2025-03-28T00:00:00.000Z",
+    "selfReportedFicoMin": 680,
+    "selfReportedFicoMax": 699,
+    "fundingPurpose": "Equipment",
+    "requestedAmount": 420000,
+    "timeFrame": "2 – 4 weeks"
   },
   {
     "id": "app-005",
@@ -57,7 +78,13 @@
     "assigneeName": "Sandra Torres",
     "loanAmount": 680000,
     "createdAt": "2024-11-05T00:00:00.000Z",
-    "updatedAt": "2025-02-14T00:00:00.000Z"
+    "updatedAt": "2025-02-14T00:00:00.000Z",
+    "fundedAt": "2025-02-14T00:00:00.000Z",
+    "selfReportedFicoMin": 740,
+    "selfReportedFicoMax": 759,
+    "fundingPurpose": "Refinance",
+    "requestedAmount": 680000,
+    "timeFrame": "Immediately"
   },
   {
     "id": "app-006",
@@ -69,7 +96,12 @@
     "assigneeName": "Kaitlyn McKnight",
     "loanAmount": 2100000,
     "createdAt": "2025-02-03T00:00:00.000Z",
-    "updatedAt": "2025-04-01T00:00:00.000Z"
+    "updatedAt": "2025-04-01T00:00:00.000Z",
+    "selfReportedFicoMin": 780,
+    "selfReportedFicoMax": 799,
+    "fundingPurpose": "Real estate",
+    "requestedAmount": 2100000,
+    "timeFrame": "4 weeks+"
   },
   {
     "id": "app-007",
@@ -81,7 +113,12 @@
     "assigneeName": "James Ruiz",
     "loanAmount": 150000,
     "createdAt": "2025-02-10T00:00:00.000Z",
-    "updatedAt": "2025-03-05T00:00:00.000Z"
+    "updatedAt": "2025-03-05T00:00:00.000Z",
+    "selfReportedFicoMin": 600,
+    "selfReportedFicoMax": 619,
+    "fundingPurpose": "Acquisition",
+    "requestedAmount": 150000,
+    "timeFrame": "4 weeks+"
   },
   {
     "id": "app-008",
@@ -93,7 +130,12 @@
     "assigneeName": "Kaitlyn McKnight",
     "loanAmount": 310000,
     "createdAt": "2025-02-17T00:00:00.000Z",
-    "updatedAt": "2025-04-02T00:00:00.000Z"
+    "updatedAt": "2025-04-02T00:00:00.000Z",
+    "selfReportedFicoMin": 660,
+    "selfReportedFicoMax": 679,
+    "fundingPurpose": "Equipment",
+    "requestedAmount": 310000,
+    "timeFrame": "2 – 4 weeks"
   },
   {
     "id": "app-009",
@@ -105,19 +147,31 @@
     "assigneeName": "Sandra Torres",
     "loanAmount": 95000,
     "createdAt": "2024-12-01T00:00:00.000Z",
-    "updatedAt": "2025-01-30T00:00:00.000Z"
+    "updatedAt": "2025-01-30T00:00:00.000Z",
+    "fundedAt": "2025-03-27T00:00:00.000Z",
+    "selfReportedFicoMin": 720,
+    "selfReportedFicoMax": 739,
+    "fundingPurpose": "Working capital",
+    "requestedAmount": 95000,
+    "timeFrame": "Immediately"
   },
   {
     "id": "app-010",
     "applicationNumber": "00010",
-    "stage": "Requested Prepaid Docs",
+    "stage": "Funded",
     "loanPurpose": "Debt Refinance",
     "branchName": "Summit Bridge Capital",
     "loanOfficerName": "Nathan Cole",
     "assigneeName": "James Ruiz",
     "loanAmount": 760000,
     "createdAt": "2025-03-01T00:00:00.000Z",
-    "updatedAt": "2025-04-05T00:00:00.000Z"
+    "updatedAt": "2025-05-06T00:00:00.000Z",
+    "fundedAt": "2025-05-06T00:00:00.000Z",
+    "selfReportedFicoMin": 700,
+    "selfReportedFicoMax": 719,
+    "fundingPurpose": "Refinance",
+    "requestedAmount": 760000,
+    "timeFrame": "2 – 4 weeks"
   },
   {
     "id": "app-011",
@@ -129,7 +183,12 @@
     "assigneeName": "Kaitlyn McKnight",
     "loanAmount": 1800000,
     "createdAt": "2025-03-10T00:00:00.000Z",
-    "updatedAt": "2025-03-12T00:00:00.000Z"
+    "updatedAt": "2025-03-12T00:00:00.000Z",
+    "selfReportedFicoMin": 800,
+    "selfReportedFicoMax": 819,
+    "fundingPurpose": "Real estate",
+    "requestedAmount": 1800000,
+    "timeFrame": "4 weeks+"
   },
   {
     "id": "app-012",
@@ -141,7 +200,12 @@
     "assigneeName": "Sandra Torres",
     "loanAmount": 200000,
     "createdAt": "2025-01-28T00:00:00.000Z",
-    "updatedAt": "2025-02-20T00:00:00.000Z"
+    "updatedAt": "2025-02-20T00:00:00.000Z",
+    "selfReportedFicoMin": 580,
+    "selfReportedFicoMax": 599,
+    "fundingPurpose": "Acquisition",
+    "requestedAmount": 200000,
+    "timeFrame": "4 weeks+"
   },
   {
     "id": "app-013",
@@ -153,7 +217,12 @@
     "assigneeName": "James Ruiz",
     "loanAmount": 480000,
     "createdAt": "2025-03-14T00:00:00.000Z",
-    "updatedAt": "2025-04-08T00:00:00.000Z"
+    "updatedAt": "2025-04-08T00:00:00.000Z",
+    "selfReportedFicoMin": 640,
+    "selfReportedFicoMax": 659,
+    "fundingPurpose": "Equipment",
+    "requestedAmount": 480000,
+    "timeFrame": "Immediately"
   },
   {
     "id": "app-014",
@@ -165,7 +234,13 @@
     "assigneeName": "Kaitlyn McKnight",
     "loanAmount": 550000,
     "createdAt": "2024-10-15T00:00:00.000Z",
-    "updatedAt": "2025-01-10T00:00:00.000Z"
+    "updatedAt": "2025-01-10T00:00:00.000Z",
+    "fundedAt": "2025-04-02T00:00:00.000Z",
+    "selfReportedFicoMin": 760,
+    "selfReportedFicoMax": 779,
+    "fundingPurpose": "Refinance",
+    "requestedAmount": 550000,
+    "timeFrame": "Immediately"
   },
   {
     "id": "app-015",
@@ -177,6 +252,11 @@
     "assigneeName": "Sandra Torres",
     "loanAmount": 175000,
     "createdAt": "2025-04-01T00:00:00.000Z",
-    "updatedAt": "2025-04-10T00:00:00.000Z"
+    "updatedAt": "2025-04-10T00:00:00.000Z",
+    "selfReportedFicoMin": 620,
+    "selfReportedFicoMax": 639,
+    "fundingPurpose": "Working capital",
+    "requestedAmount": 175000,
+    "timeFrame": "2 – 4 weeks"
   }
 ]

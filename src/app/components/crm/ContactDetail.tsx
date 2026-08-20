@@ -11,8 +11,6 @@ import {
   Clock,
   PhoneCall,
   MessageSquare,
-  Pencil,
-  Copy,
   CalendarDays,
   FileText,
   ChevronDown,
@@ -34,17 +32,11 @@ import { CreateTaskModal } from "@/app/components/email-workflows/CreateTaskModa
 import { TaskActionModal } from "@/app/components/email-workflows/TaskActionModal";
 import { PauseAllCommsModal } from "./PauseAllCommsModal";
 import { ContactCommunicationsTab } from "./ContactCommunicationsTab";
-import { ContactAttributionBlock } from "./ContactAttributionBlock";
 import { ContactOfficeSection } from "./ContactOfficeSection";
 import { useContactOffice } from "./useContactOffice";
-import { ContactQuestionnaireSection } from "./ContactQuestionnaireSection";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/app/components/ui/select";
+import { ContactGeneralInfoSection } from "./ContactGeneralInfoSection";
+import { ContactMarketingSection } from "./ContactMarketingSection";
+import { ContactInboundDetailsSection } from "./ContactInboundDetailsSection";
 import { Switch } from "@/app/components/ui/switch";
 import {
   AlertDialog,
@@ -140,8 +132,6 @@ export function ContactDetail() {
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [modalTask, setModalTask] = useState<TaskItem | null>(null);
   const [modalMode, setModalMode] = useState<TaskModalMode>(null);
-  const [infoOpen, setInfoOpen] = useState(true);
-  const [addressOpen, setAddressOpen] = useState(false);
   const [applicationsOpen, setApplicationsOpen] = useState(true);
   const [companiesOpen, setCompaniesOpen] = useState(true);
   const [listingOpen, setListingOpen] = useState(true);
@@ -335,19 +325,11 @@ export function ContactDetail() {
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-base font-semibold leading-tight truncate">{contact.firstName} {contact.lastName}</h2>
-                <Select
-                  value={contact.userType}
-                  onValueChange={(v) => handleUpdateContact(contact.id, { userType: v as Contact["userType"] })}
-                >
-                  <SelectTrigger className="!border-0 !bg-transparent !shadow-none !px-0 !py-0 !h-auto !ring-0 !ring-offset-0 !justify-start !gap-1 text-sm font-medium text-muted-foreground mt-0.5">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {["Broker", "Lender", "Partner", "Borrower", "Co-Borrower"].map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Created date lives here as a subline: worth knowing, never worth a
+                    field row of its own among things sales actually acts on. */}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Created {formatDate(contact.createAt)}
+                </p>
               </div>
             </div>
 
@@ -390,34 +372,6 @@ export function ContactDetail() {
                 <span className="text-[10px] text-muted-foreground">Note</span>
               </button>
             </div>
-          </div>
-
-          {/* Loan Officer — the hub keeps this in the header, below the actions */}
-          <div className="px-5 pb-4 border-b border-border">
-            <div className="flex items-center justify-between mb-0.5">
-              <p className="text-sm font-semibold">Loan Officer</p>
-              {contact.loanOfficer && (
-                <button
-                  onClick={() => handleUpdateContact(contact.id, { loanOfficer: undefined })}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <Select
-              value={contact.loanOfficer ?? ""}
-              onValueChange={(v) => handleUpdateContact(contact.id, { loanOfficer: v })}
-            >
-              <SelectTrigger className="!border-0 !bg-transparent !shadow-none !px-0 !py-0 !h-auto !ring-0 !ring-offset-0 !justify-start !gap-1 text-sm text-primary font-medium">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {["Andy Officer", "Sarah Manager", "John Lead", "Maria Broker"].map((o) => (
-                  <SelectItem key={o} value={o}>{o}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
 
@@ -508,47 +462,10 @@ export function ContactDetail() {
           </div>
 
 
-          {/* Contact Info accordion */}
-          <div className="px-5 py-5 border-b border-border">
-            <button
-              onClick={() => setInfoOpen((v) => !v)}
-              className="flex items-center justify-between w-full mb-3"
-            >
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Contact Info</span>
-              {infoOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-            </button>
+          {/* The two property sections: what sales acts on, then where they came from */}
+          <ContactGeneralInfoSection contact={contact} />
 
-            {infoOpen && (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Phone</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm text-primary truncate">{contact.phone}</span>
-                    <button className="text-muted-foreground hover:text-foreground shrink-0" title="Edit phone">
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Email</p>
-                  <span className="text-sm break-all">{contact.email}</span>
-                </div>
-                {/* Flat attribution: closed-enum source + drill-downs, campaign as its own object */}
-                <ContactAttributionBlock contact={contact} />
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Created at</p>
-                    <span className="text-xs text-muted-foreground">{formatDate(contact.createAt)}</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Updated at</p>
-                    <span className="text-xs text-muted-foreground">{contact.updatedAt ? formatDate(contact.updatedAt) : "—"}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
+          <ContactMarketingSection contact={contact} />
 
           {/* Office — hidden entirely when the contact has no office attached */}
           {contactOffice && (
@@ -557,50 +474,8 @@ export function ContactDetail() {
             </div>
           )}
 
-          {/* Address accordion */}
-          <div className="px-5 py-5">
-            <button
-              onClick={() => setAddressOpen((v) => !v)}
-              className="flex items-center justify-between w-full mb-3"
-            >
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Address</span>
-              {addressOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-            </button>
-
-            {addressOpen && (
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Home Address</p>
-                  <span className="text-sm">{contact.address ?? "—"}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">City</p>
-                    <span className="text-sm">{contact.city ?? "—"}</span>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">State</p>
-                    <span className="text-sm">{contact.state ?? "—"}</span>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">ZIP Code</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm">{contact.zipCode ?? "—"}</span>
-                    {contact.zipCode && (
-                      <button
-                        onClick={() => navigator.clipboard.writeText(contact.zipCode!)}
-                        className="text-muted-foreground hover:text-foreground shrink-0"
-                        title="Copy ZIP code"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* What the lead form asked, in the form's own words */}
+          <ContactInboundDetailsSection contact={contact} />
         </aside>
 
         {/* ── CENTER PANEL ── */}
@@ -1068,11 +943,6 @@ export function ContactDetail() {
                 <p className="text-xs text-muted-foreground">No applications linked</p>
               );
             })()}
-          </div>
-
-          {/* Questionnaire — rendered from admin-defined custom fields */}
-          <div className="px-1">
-            <ContactQuestionnaireSection contact={contact} />
           </div>
 
           {/* Upcoming Tasks */}

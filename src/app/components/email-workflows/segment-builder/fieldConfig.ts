@@ -1,4 +1,9 @@
-import type { FilterFieldV2, FilterOperatorV2 } from "@/app/types";
+import type {
+  CustomFieldDefinition,
+  FilterFieldV2,
+  FilterOperatorV2,
+} from "@/app/types";
+import { filterableFields } from "@/app/data/customFieldUsage";
 import type { FieldPickerItem } from "./FilterFieldPicker";
 
 // ─── Field config ─────────────────────────────────────────────────────────────
@@ -13,7 +18,7 @@ export interface FieldConfig {
   options?: string[];
 }
 
-export const FIELD_CONFIG: Record<FilterFieldV2, FieldConfig> = {
+export const CORE_FIELD_CONFIG: Record<string, FieldConfig> = {
   firstName: {
     label: "First Name",
     description: "The contact's first name",
@@ -110,6 +115,51 @@ export const FIELD_CONFIG: Record<FilterFieldV2, FieldConfig> = {
     type: "date",
     operators: ["before", "after", "within_last_n_days"],
   },
+  // The four underwriting criteria. Each matches an application value OR the
+  // lead's own answer from an ad form — see matchesQualificationRule.
+  self_reported_fico: {
+    label: "FICO Score",
+    description:
+      "Credit score from the application, or the band the lead selected on an ad form",
+    category: "Properties",
+    subCategory: "Qualification",
+    type: "number",
+    operators: [">=", "<=", ">", "<", "=", "!="],
+  },
+  funding_purpose: {
+    label: "Funding Purpose",
+    description:
+      "What the money is for, from the application or the lead's own answer",
+    category: "Properties",
+    subCategory: "Qualification",
+    type: "select",
+    operators: ["=", "!=", "contains", "not_contains"],
+    options: [
+      "Working capital",
+      "Equipment",
+      "Acquisition",
+      "Refinance",
+      "Real estate",
+    ],
+  },
+  requested_amount: {
+    label: "Requested Amount",
+    description:
+      "Loan amount requested on the application, or the amount the lead asked for",
+    category: "Properties",
+    subCategory: "Qualification",
+    type: "number",
+    operators: [">=", "<=", ">", "<", "=", "!="],
+  },
+  funding_timeline: {
+    label: "Funding Timeline",
+    description: "How soon the money is needed, from either source",
+    category: "Properties",
+    subCategory: "Qualification",
+    type: "select",
+    operators: ["=", "!="],
+    options: ["Immediately", "2 – 4 weeks", "4 weeks+"],
+  },
   hasActiveEnrollment: {
     label: "Has Active Enrollment",
     description: "Whether the contact is enrolled in any active workflow",
@@ -142,7 +192,7 @@ export const OPERATOR_LABELS: Partial<Record<FilterOperatorV2, string>> = {
   "<=": "at most",
 };
 
-export const ALL_FIELDS: FilterFieldV2[] = [
+const CORE_FIELDS: FilterFieldV2[] = [
   "firstName",
   "lastName",
   "email",
@@ -153,30 +203,125 @@ export const ALL_FIELDS: FilterFieldV2[] = [
   "listingName",
   "createAt",
   "openReminders",
+  "self_reported_fico",
+  "funding_purpose",
+  "requested_amount",
+  "funding_timeline",
   "optedOut",
   "lastContacted",
   "hasActiveEnrollment",
   "enrolledInWorkflow",
 ];
 
-export const FIELD_PICKER_ITEMS: FieldPickerItem<FilterFieldV2>[] = ALL_FIELDS.map((f) => ({
-  field: f,
-  label: FIELD_CONFIG[f].label,
-  description: FIELD_CONFIG[f].description,
-  category: FIELD_CONFIG[f].category,
-  subCategory: FIELD_CONFIG[f].subCategory,
-  fieldType: FIELD_CONFIG[f].type,
-  options: FIELD_CONFIG[f].options,
-}));
+/**
+ * Operators a custom field can be filtered with, chosen from its type.
+ *
+ * A number field offered `contains` would be nonsense, and a date field offered
+ * `=` would almost never match. The type already says which comparisons mean
+ * something, so it picks them.
+ */
+const OPERATORS_BY_TYPE: Record<CustomFieldDefinition["type"], FilterOperatorV2[]> = {
+  text: ["contains", "not_contains", "=", "!="],
+  number: [">=", "<=", ">", "<", "=", "!="],
+  date: ["before", "after"],
+  select: ["=", "!="],
+};
 
-export function defaultValueForField(field: FilterFieldV2): string {
-  const cfg = FIELD_CONFIG[field];
+/**
+ * A filterable custom field, as a segment field.
+ *
+ * This function is why the "Filterable" switch means anything. Before it existed the
+ * switch wrote a boolean nothing read: an admin turned it on, went to the segment
+ * builder, and the field was not there.
+ */
+export function customFieldConfig(definition: CustomFieldDefinition): FieldConfig {
+  return {
+    label: definition.label,
+    description:
+      definition.description ??
+      `Custom field answered on a form (${definition.key})`,
+    category: "Properties",
+    subCategory: definition.section || "Custom fields",
+    type: definition.type,
+    operators: OPERATORS_BY_TYPE[definition.type],
+    options: definition.type === "select" ? definition.options : undefined,
+  };
+}
+
+/** Core fields plus every filterable custom field, keyed by field id. */
+export function buildFieldConfig(
+  definitions: CustomFieldDefinition[] = [],
+): Record<string, FieldConfig> {
+  const config: Record<string, FieldConfig> = { ...CORE_FIELD_CONFIG };
+  for (const definition of filterableFields(definitions)) {
+    // Four custom fields share a key with an underwriting criterion — the ad form
+    // writes both. The core entry wins there: it matches the application *and* the
+    // lead's own answer, and it compares numbers instead of band labels.
+    if (config[definition.key]) continue;
+    // Otherwise the field's own key is its filter id, so a saved segment keeps
+    // working even if the field is later renamed.
+    config[definition.key] = customFieldConfig(definition);
+  }
+  return config;
+}
+
+export function buildAllFields(
+  definitions: CustomFieldDefinition[] = [],
+): FilterFieldV2[] {
+  const extra = filterableFields(definitions)
+    .map((f) => f.key)
+    .filter((key) => !CORE_FIELD_CONFIG[key]);
+  return [...CORE_FIELDS, ...extra];
+}
+
+const FALLBACK_CONFIG: FieldConfig = {
+  label: "Unknown field",
+  description: "This field is no longer available",
+  category: "Properties",
+  type: "text",
+  operators: ["=", "!="],
+};
+
+/** Never throws on a field id that has since been archived or renamed away. */
+export function fieldConfigFor(
+  field: string,
+  config: Record<string, FieldConfig> = CORE_FIELD_CONFIG,
+): FieldConfig {
+  return config[field] ?? FALLBACK_CONFIG;
+}
+
+export function buildFieldPickerItems(
+  definitions: CustomFieldDefinition[] = [],
+): FieldPickerItem<FilterFieldV2>[] {
+  const config = buildFieldConfig(definitions);
+  return buildAllFields(definitions).map((f) => {
+    const cfg = fieldConfigFor(f, config);
+    return {
+      field: f,
+      label: cfg.label,
+      description: cfg.description,
+      category: cfg.category,
+      subCategory: cfg.subCategory,
+      fieldType: cfg.type,
+      options: cfg.options,
+    };
+  });
+}
+
+export function defaultValueForField(
+  field: FilterFieldV2,
+  config: Record<string, FieldConfig> = CORE_FIELD_CONFIG,
+): string {
+  const cfg = fieldConfigFor(field, config);
   if (cfg.type === "boolean") return "";
   if (cfg.type === "select" && cfg.options?.length) return cfg.options[0];
   if (cfg.type === "number") return "0";
   return "";
 }
 
-export function defaultOperatorForField(field: FilterFieldV2): FilterOperatorV2 {
-  return FIELD_CONFIG[field].operators[0];
+export function defaultOperatorForField(
+  field: FilterFieldV2,
+  config: Record<string, FieldConfig> = CORE_FIELD_CONFIG,
+): FilterOperatorV2 {
+  return fieldConfigFor(field, config).operators[0];
 }

@@ -20,9 +20,8 @@ import {
 } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { useAppData } from "@/app/contexts/AppDataContext";
-import { TRAFFIC_SOURCES } from "@/app/data/trafficSources";
 import { toUtmKey } from "@/app/data/campaignUtils";
-import type { Campaign, CampaignStatus, TrafficSourceId } from "@/app/types";
+import type { Campaign, CampaignStatus } from "@/app/types";
 
 const STATUSES: CampaignStatus[] = ["Draft", "Active", "Paused", "Completed"];
 
@@ -46,7 +45,6 @@ export function CampaignFormModal({
   const [name, setName] = useState("");
   const [utmCampaign, setUtmCampaign] = useState("");
   const [utmTouched, setUtmTouched] = useState(false);
-  const [channel, setChannel] = useState<TrafficSourceId>("paid-social");
   const [status, setStatus] = useState<CampaignStatus>("Draft");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -57,7 +55,6 @@ export function CampaignFormModal({
     setName(campaign?.name ?? "");
     setUtmCampaign(campaign?.utmCampaign ?? "");
     setUtmTouched(Boolean(campaign));
-    setChannel(campaign?.channel ?? "paid-social");
     setStatus(campaign?.status ?? "Draft");
     setStartDate(toDateInput(campaign?.startDate));
     setEndDate(toDateInput(campaign?.endDate));
@@ -73,7 +70,6 @@ export function CampaignFormModal({
     const payload = {
       name: name.trim(),
       utmCampaign: effectiveUtm,
-      channel,
       status,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -130,24 +126,8 @@ export function CampaignFormModal({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label>Channel</Label>
-              <Select
-                value={channel}
-                onValueChange={(v) => setChannel(v as TrafficSourceId)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRAFFIC_SOURCES.map((source) => (
-                    <SelectItem key={source.id} value={source.id}>
-                      {source.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* No spend field: cost reporting is out of scope, so an input that
+                feeds nothing on screen would be a promise the CRM does not keep. */}
             <div className="grid gap-1.5">
               <Label>Status</Label>
               <Select

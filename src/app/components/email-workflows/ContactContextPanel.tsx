@@ -54,9 +54,10 @@ interface MiniTimelineEntry {
  * so a reassigned task is self-explanatory.
  */
 export function ContactContextPanel({ contact }: ContactContextPanelProps) {
-  const { segments, workflowEnrollments, workflows, contactActivity, emailHistory } = useAppData();
+  const { segments, workflowEnrollments, workflows, contactActivity, emailHistory, applications } =
+    useAppData();
 
-  const contactSegments = getContactSegments(contact, segments);
+  const contactSegments = getContactSegments(contact, segments, applications);
   const workflowContexts = getContactWorkflowContexts(contact.id, workflowEnrollments, workflows);
 
   // ── Recent timeline (activity + comms), newest first — scrollable in the panel ─

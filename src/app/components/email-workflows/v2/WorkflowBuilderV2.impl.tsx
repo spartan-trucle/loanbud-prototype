@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router";
 import {
   ArrowLeft,
@@ -67,8 +67,9 @@ import {
 } from "@/app/components/ui/dialog";
 import { FilterFieldPicker } from "../segment-builder/FilterFieldPicker";
 import {
-  FIELD_CONFIG,
-  FIELD_PICKER_ITEMS,
+  buildFieldConfig,
+  buildFieldPickerItems,
+  fieldConfigFor,
   OPERATOR_LABELS,
   defaultValueForField,
   defaultOperatorForField,
@@ -517,6 +518,14 @@ function StepRow({
   onReorder,
   showConnector,
 }: StepRowProps) {
+  // Same field vocabulary as the config panel, so a saved condition on a custom
+  // field reads as its label rather than as a raw key.
+  const { customFieldDefinitions } = useAppData();
+  const rowFieldConfig = useMemo(
+    () => buildFieldConfig(customFieldDefinitions),
+    [customFieldDefinitions],
+  );
+
   const [{ isDragging }, drag, dragPreview] = useDrag({
     type: STEP_DRAG_TYPE,
     item: { index },
@@ -643,10 +652,10 @@ function StepRow({
               <div className="flex items-center gap-2 mb-2.5">
                 <span className="text-[9px] font-bold tracking-widest uppercase text-muted-foreground/50 flex-shrink-0">When</span>
                 <div className="flex items-center gap-1.5 text-xs flex-wrap">
-                  {step.conditionField && FIELD_CONFIG[step.conditionField as FilterFieldV2] ? (
+                  {step.conditionField ? (
                     <>
                       <span className="font-semibold text-foreground">
-                        {FIELD_CONFIG[step.conditionField as FilterFieldV2].label}
+                        {fieldConfigFor(step.conditionField, rowFieldConfig).label}
                       </span>
                       <span className="text-muted-foreground">
                         {OPERATOR_LABELS[step.conditionOperator as FilterOperatorV2] ?? step.conditionOperator ?? "equals"}
@@ -786,6 +795,17 @@ interface StepConfigPanelProps {
 }
 
 function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty }: StepConfigPanelProps) {
+  // A field marked filterable has to show up wherever filters are built, not just in
+  // the segment builder — otherwise the switch is only half true.
+  const { customFieldDefinitions } = useAppData();
+  const fieldConfig = useMemo(
+    () => buildFieldConfig(customFieldDefinitions),
+    [customFieldDefinitions],
+  );
+  const fieldPickerItems = useMemo(
+    () => buildFieldPickerItems(customFieldDefinitions),
+    [customFieldDefinitions],
+  );
   const isConditional = step.actionType === "conditional";
   const isDelay = step.actionType === "delay";
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -805,12 +825,13 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
     reminderDaysBefore: step.reminderDaysBefore,
   });
 
-  const safeCondField = (step.conditionField && FIELD_CONFIG[step.conditionField as FilterFieldV2])
+  const safeCondField = (step.conditionField && fieldConfig[step.conditionField])
     ? (step.conditionField as FilterFieldV2)
     : "userType";
   const [condField, setCondField] = useState<FilterFieldV2>(safeCondField);
   const [condOperator, setCondOperator] = useState<FilterOperatorV2>(
-    (step.conditionOperator as FilterOperatorV2) ?? defaultOperatorForField(safeCondField)
+    (step.conditionOperator as FilterOperatorV2) ??
+      defaultOperatorForField(safeCondField, fieldConfig)
   );
   const [condValue, setCondValue] = useState(step.conditionValue ?? "");
   const [ifSteps, setIfSteps] = useState<WorkflowStep[]>(step.ifBranch ?? []);
@@ -840,7 +861,7 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
 
   function handleOperatorChange(newOp: FilterOperatorV2) {
     setCondOperator(newOp);
-    if (FIELD_CONFIG[condField].type === "boolean") setCondValue("");
+    if (fieldConfigFor(condField, fieldConfig).type === "boolean") setCondValue("");
     onDirty();
   }
 
@@ -862,7 +883,7 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
     ? "border-border text-muted-foreground"
     : TYPE_ICON_STYLE[step.actionType as ActionType];
 
-  const fieldCfg = FIELD_CONFIG[condField];
+  const fieldCfg = fieldConfigFor(condField, fieldConfig);
 
   return (
     <div className="flex flex-col h-full">
@@ -966,7 +987,7 @@ function StepConfigPanel({ step, totalSteps, onSave, onCancel, onRemove, onDirty
                 <div className="flex items-center gap-2 flex-wrap">
                   <FilterFieldPicker<FilterFieldV2>
                     value={condField}
-                    fields={FIELD_PICKER_ITEMS}
+                    fields={fieldPickerItems}
                     onChange={handleFieldChange}
                   />
                   <select

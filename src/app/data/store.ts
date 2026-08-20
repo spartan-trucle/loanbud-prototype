@@ -1,4 +1,4 @@
-import type { Contact, EmailRecord, Task, Segment, TaskItem, Application, BusinessAcquisitionRecord, Workflow, WorkflowEnrollment, ContactActivityRecord, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder, Campaign, CustomFieldDefinition, Company, ListingRecord } from "../types";
+import type { Contact, EmailRecord, Task, Segment, TaskItem, Application, BusinessAcquisitionRecord, Workflow, WorkflowEnrollment, ContactActivityRecord, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder, Campaign, CustomFieldDefinition, Company, ListingRecord, LeadFormDefinition, PlatformAccount, InboundLeadEvent, ContactLeadAnswer } from "../types";
 import contactsJson from "./contacts.json";
 import segmentsJson from "./segments.json";
 import taskItemsJson from "./taskItems.json";
@@ -18,22 +18,30 @@ import senderIdentitiesJson from "./senderIdentities.json";
 import notificationsJson from "./notifications.json";
 import loGroupsJson from "./loGroups.json";
 import campaignsJson from "./campaigns.json";
+import leadFormsJson from "./leadForms.json";
+import inboundLeadEventsJson from "./inboundLeadEvents.json";
+import contactLeadAnswersJson from "./contactLeadAnswers.json";
+import platformAccountsJson from "./platformAccounts.json";
 import customFieldDefinitionsJson from "./customFieldDefinitions.json";
 import companiesJson from "./companies.json";
 import listingsJson from "./listings.json";
 
 const KEYS = {
-  // v6: traffic-source enum reduced to five; contacts on retired branches remapped
-  contacts: "loanbudcrm:v6:contacts",
+  // v9: lead-declared qualification fields; leadStatus dropped (role is the lifecycle)
+  contacts: "loanbudcrm:v9:contacts",
   segments: "loanbudcrm:v2:segments",
-  campaigns: "loanbudcrm:v2:campaigns",
+  campaigns: "loanbudcrm:v3:campaigns",
+  leadForms: "loanbudcrm:v3:leadForms",
+  inboundLeadEvents: "loanbudcrm:v1:inboundLeadEvents",
+  contactLeadAnswers: "loanbudcrm:v1:contactLeadAnswers",
+  platformAccounts: "loanbudcrm:v1:platformAccounts",
   companies: "loanbudcrm:v1:companies",
   listings: "loanbudcrm:v1:listings",
-  customFieldDefinitions: "loanbudcrm:v1:customFieldDefinitions",
+  customFieldDefinitions: "loanbudcrm:v3:customFieldDefinitions",
   taskItems: "loanbudcrm:taskItems",
   emailHistory: "loanbudcrm:v3:emailHistory",
   tasks: "loanbudcrm:tasks",
-  applications: "loanbudcrm:applications",
+  applications: "loanbudcrm:v2:applications",
   businessAcquisitions: "loanbudcrm:businessAcquisitions",
   workflows: "loanbudcrm:v5:workflows",
   workflowEnrollments: "loanbudcrm:v5:workflowEnrollments",
@@ -110,7 +118,7 @@ export const store = {
       read<Contact>(
         KEYS.contacts,
         contactsJson,
-        ["createAt"],
+        ["createAt", "latestTrafficSourceAt"],
       ),
     write: (data: Contact[]) => write(KEYS.contacts, data),
   },
@@ -122,6 +130,39 @@ export const store = {
         ["lastUpdatedAt", "createdAt"],
       ),
     write: (data: Segment[]) => write(KEYS.segments, data),
+  },
+  platformAccounts: {
+    read: () =>
+      read<PlatformAccount>(KEYS.platformAccounts, platformAccountsJson, ["connectedAt"]),
+    write: (data: PlatformAccount[]) => write(KEYS.platformAccounts, data),
+  },
+  leadForms: {
+    // The form itself is defined on the platform; what the CRM owns is the mapping
+    // of its questions onto CRM fields, and whether the form syncs at all.
+    read: () =>
+      read<LeadFormDefinition>(KEYS.leadForms, leadFormsJson, [
+        "createdAtExternal",
+        "submissionsLastSyncedAt",
+      ]),
+    write: (data: LeadFormDefinition[]) => write(KEYS.leadForms, data),
+  },
+  inboundLeadEvents: {
+    // The raw inbox. Written before anything about a submission is interpreted, which
+    // is what makes every later wave buildable against real history rather than a
+    // re-fetch the platform will no longer serve.
+    read: () =>
+      read<InboundLeadEvent>(KEYS.inboundLeadEvents, inboundLeadEventsJson, [
+        "receivedAt",
+        "resolvedAt",
+      ]),
+    write: (data: InboundLeadEvent[]) => write(KEYS.inboundLeadEvents, data),
+  },
+  contactLeadAnswers: {
+    // One row per contact per question. Not a map on the Contact: the segment builder
+    // can only filter a real typed column, so valueMin/valueMax have to survive as
+    // numbers rather than being flattened into a blob of strings.
+    read: () => read<ContactLeadAnswer>(KEYS.contactLeadAnswers, contactLeadAnswersJson, []),
+    write: (data: ContactLeadAnswer[]) => write(KEYS.contactLeadAnswers, data),
   },
   campaigns: {
     read: () =>
@@ -155,7 +196,7 @@ export const store = {
       read<CustomFieldDefinition>(
         KEYS.customFieldDefinitions,
         customFieldDefinitionsJson,
-        ["createdAt"],
+        ["createdAt", "archivedAt"],
       ),
     write: (data: CustomFieldDefinition[]) =>
       write(KEYS.customFieldDefinitions, data),
@@ -192,7 +233,7 @@ export const store = {
       read<Application>(
         KEYS.applications,
         applicationsJson,
-        ["createdAt", "updatedAt"],
+        ["createdAt", "updatedAt", "fundedAt"],
       ),
     write: (data: Application[]) => write(KEYS.applications, data),
   },

@@ -1,14 +1,16 @@
 import { useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Plus, Save, Pencil, X, Copy, Trash2, ChevronDown } from "lucide-react";
-import type { Contact, FilterRule, SavedSegment, Segment, Workflow } from "@/app/types";
+import type { Contact, ContactLeadAnswer, FilterRule, SavedSegment, Segment, Workflow } from "@/app/types";
+import { answerValue } from "@/app/data/contactLeadAnswers";
 import type { FilterFieldV2, FilterOperatorV2, FilterRuleV2, FilterGroupV2 } from "@/app/types";
 import { SegmentPreviewPanel } from "../segment-builder/SegmentPreviewPanel";
 import { SpecificContactPicker } from "../segment-builder/SpecificContactPicker";
 import { FilterFieldPicker } from "../segment-builder/FilterFieldPicker";
 import {
-  FIELD_CONFIG,
-  FIELD_PICKER_ITEMS,
+  buildFieldConfig,
+  buildFieldPickerItems,
+  fieldConfigFor,
   OPERATOR_LABELS,
   defaultValueForField,
   defaultOperatorForField,
@@ -22,7 +24,7 @@ function makeGroupV2(): FilterGroupV2 {
 }
 
 // Simplified filter evaluation for live preview and static snapshot
-function evalFilterV2(f: FilterRuleV2, contact: Contact, _workflows: Workflow[]): boolean {
+function evalFilterV2(f: FilterRuleV2, contact: Contact, _workflows: Workflow[], leadAnswers: ContactLeadAnswer[]): boolean {
   const field = f.field;
   const op = f.operator;
 
@@ -76,42 +78,105 @@ function evalFilterV2(f: FilterRuleV2, contact: Contact, _workflows: Workflow[])
     if (op === "after") return contactDate > target;
     return true;
   }
-  // Fields we can't evaluate client-side: pass through
-  return true;
+  // Anything left is a lead answer: one row per contact per question, looked up by
+  // the target key — which is also the filter id.
+  const answer = answerValue(contact.id, field, leadAnswers);
+  if (answer !== undefined) {
+    const val = answer.trim().toLowerCase();
+    const target = f.value.trim().toLowerCase();
+    switch (op) {
+      case "=": return val === target;
+      case "!=": return val !== target;
+      case "contains": return val.includes(target);
+      case "not_contains": return !val.includes(target);
+      case ">": return Number(answer) > Number(f.value);
+      case "<": return Number(answer) < Number(f.value);
+      case ">=": return Number(answer) >= Number(f.value);
+      case "<=": return Number(answer) <= Number(f.value);
+      case "before": return new Date(answer).getTime() < new Date(f.value).getTime();
+      case "after": return new Date(answer).getTime() > new Date(f.value).getTime();
+      default: return true;
+    }
+  }
+  // A contact with no answer fails a positive rule but satisfies a negative one.
+  if (op === "!=" || op === "not_contains") return true;
+  if (KNOWN_UNEVALUABLE.has(field)) return true;
+  return false;
 }
 
-function evalGroupV2(group: FilterGroupV2, contact: Contact, workflows: Workflow[]): boolean {
+/** Fields the preview genuinely cannot judge client-side, rather than empty ones. */
+const KNOWN_UNEVALUABLE = new Set<string>([
+  "hasActiveEnrollment",
+  "enrolledInWorkflow",
+  "lastContacted",
+  "brokerageName",
+]);
+
+function evalGroupV2(group: FilterGroupV2, contact: Contact, workflows: Workflow[], leadAnswers: ContactLeadAnswer[]): boolean {
   if (group.filters.length === 0) return true;
-  let result = evalFilterV2(group.filters[0], contact, workflows);
+  let result = evalFilterV2(group.filters[0], contact, workflows, leadAnswers);
   for (let i = 1; i < group.filters.length; i++) {
-    const next = evalFilterV2(group.filters[i], contact, workflows);
+    const next = evalFilterV2(group.filters[i], contact, workflows, leadAnswers);
     result = group.filters[i - 1].logic === "and" ? result && next : result || next;
   }
   return result;
 }
 
-function matchGroupsV2(groups: FilterGroupV2[], contacts: Contact[], workflows: Workflow[]): Contact[] {
+function matchGroupsV2(groups: FilterGroupV2[], contacts: Contact[], workflows: Workflow[], leadAnswers: ContactLeadAnswer[]): Contact[] {
   const nonEmpty = groups.filter((g) => g.filters.length > 0);
   if (nonEmpty.length === 0) return [];
   return contacts.filter((contact) => {
-    let result = evalGroupV2(nonEmpty[0], contact, workflows);
+    let result = evalGroupV2(nonEmpty[0], contact, workflows, leadAnswers);
     for (let i = 1; i < nonEmpty.length; i++) {
-      const next = evalGroupV2(nonEmpty[i], contact, workflows);
+      const next = evalGroupV2(nonEmpty[i], contact, workflows, leadAnswers);
       result = nonEmpty[i - 1].connectorAfter === "and" ? result && next : result || next;
     }
     return result;
   });
 }
 
-// V1-compatible fields and operators
-const V1_FIELDS = new Set<FilterFieldV2>(["listingStatus", "userType", "firstName", "lastName", "email", "phone", "listingName"]);
-const V1_OPERATORS = new Set<FilterOperatorV2>(["=", "!=", "contains", "not_contains"]);
+/**
+ * Fields a saved segment cannot express, so a rule on one is dropped rather than
+ * silently rewritten into a rule about something else.
+ *
+ * Custom fields are deliberately absent from this list: their key *is* the saved
+ * field id, so they round-trip through the V1 shape untouched. Before that they were
+ * coerced to "listingStatus", which is how a "FICO under 640" rule could come back
+ * as a listing-status rule after a save.
+ */
+const V2_ONLY_FIELDS = new Set<string>([
+  "hasActiveEnrollment",
+  "enrolledInWorkflow",
+  "lastContacted",
+  "createAt",
+  "openReminders",
+  "optedOut",
+  "brokerageName",
+]);
+const V1_OPERATORS = new Set<FilterOperatorV2>([
+  "=",
+  "!=",
+  "contains",
+  "not_contains",
+  ">",
+  "<",
+  ">=",
+  "<=",
+  "before",
+  "after",
+]);
+
+function isSavableRule(rule: FilterRuleV2): boolean {
+  return !V2_ONLY_FIELDS.has(rule.field) && V1_OPERATORS.has(rule.operator);
+}
 
 // Convert V2 filter rules to V1-compatible for saving
 function v2RuleToV1(rule: FilterRuleV2): FilterRule {
   return {
-    field: V1_FIELDS.has(rule.field) ? (rule.field as FilterRule["field"]) : "listingStatus",
-    operator: V1_OPERATORS.has(rule.operator) ? (rule.operator as FilterRule["operator"]) : "=",
+    field: rule.field,
+    operator: V1_OPERATORS.has(rule.operator)
+      ? (rule.operator as FilterRule["operator"])
+      : "=",
     value: rule.value,
     logic: rule.logic,
   };
@@ -264,6 +329,18 @@ function FilterGroupCardV2({
   onDuplicateGroup,
   onRemoveGroup,
 }: FilterGroupCardV2Props) {
+  // Field vocabulary is runtime data now: every custom field marked filterable
+  // shows up here, which is what makes that switch true.
+  const { customFieldDefinitions } = useAppData();
+  const fieldConfig = useMemo(
+    () => buildFieldConfig(customFieldDefinitions),
+    [customFieldDefinitions],
+  );
+  const fieldPickerItems = useMemo(
+    () => buildFieldPickerItems(customFieldDefinitions),
+    [customFieldDefinitions],
+  );
+
   return (
     <div>
       <div className="border border-border rounded-lg bg-card overflow-hidden">
@@ -297,19 +374,19 @@ function FilterGroupCardV2({
             </p>
           ) : (
             group.filters.map((filter, filterIdx) => {
-              const cfg = FIELD_CONFIG[filter.field];
+              const cfg = fieldConfigFor(filter.field, fieldConfig);
               return (
                 <div key={filterIdx}>
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Field selector */}
                     <FilterFieldPicker
                       value={filter.field}
-                      fields={FIELD_PICKER_ITEMS}
+                      fields={fieldPickerItems}
                       onChange={(newField) => {
                         onUpdateFilter(group.id, filterIdx, {
                           field: newField,
-                          operator: defaultOperatorForField(newField),
-                          value: defaultValueForField(newField),
+                          operator: defaultOperatorForField(newField, fieldConfig),
+                          value: defaultValueForField(newField, fieldConfig),
                         });
                       }}
                     />
@@ -495,7 +572,7 @@ export function SegmentBuilderV2({
   initialSegment,
   embeddedMode = false,
 }: SegmentBuilderV2Props) {
-  const { workflows, contacts: contextContacts, handleCreateSegment, handleUpdateSegment } = useAppData();
+  const { workflows, contacts: contextContacts, contactLeadAnswers, handleCreateSegment, handleUpdateSegment } = useAppData();
   const location = useLocation();
   const navigate = useNavigate();
   const locationState = !initialSegment
@@ -547,12 +624,12 @@ export function SegmentBuilderV2({
     let base =
       includeNonEmpty.length === 0
         ? contacts
-        : matchGroupsV2(include.groups, contacts, workflows);
+        : matchGroupsV2(include.groups, contacts, workflows, contactLeadAnswers);
 
     const excludeNonEmpty = exclude.groups.filter((g) => g.filters.length > 0);
     if (excludeNonEmpty.length > 0) {
       const excludeSet = new Set(
-        matchGroupsV2(exclude.groups, contacts, workflows).map((c) => c.id),
+        matchGroupsV2(exclude.groups, contacts, workflows, contactLeadAnswers).map((c) => c.id),
       );
       base = base.filter((c) => !excludeSet.has(c.id));
     }
@@ -573,7 +650,14 @@ export function SegmentBuilderV2({
     }
     base = base.filter((c) => !pinnedExcludeIds.has(c.id));
     return base;
-  }, [contacts, include.groups, exclude.groups, specificContacts, workflows]);
+  }, [
+    contacts,
+    include.groups,
+    exclude.groups,
+    specificContacts,
+    workflows,
+    contactLeadAnswers,
+  ]);
 
   const hasNoFilters =
     include.groups.every((g) => g.filters.length === 0) && specificContacts.length === 0;
@@ -585,10 +669,10 @@ export function SegmentBuilderV2({
   function buildPayload(name: string, description: string, id: string): SavedSegment {
     // Convert V2 filter rules back to V1-compatible for storage
     const v1Filters: FilterRule[] = include.groups.flatMap((g) =>
-      g.filters.map(v2RuleToV1),
+      g.filters.filter(isSavableRule).map(v2RuleToV1),
     );
     const v1ExcludeFilters: FilterRule[] = exclude.groups.flatMap((g) =>
-      g.filters.map(v2RuleToV1),
+      g.filters.filter(isSavableRule).map(v2RuleToV1),
     );
     return {
       id,

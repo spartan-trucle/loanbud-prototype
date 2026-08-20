@@ -21,11 +21,11 @@ import {
 } from "@/app/data/attributionTaxonomy";
 import {
   attributionSummary,
-  resolveAttribution,
-  TRAFFIC_SOURCES,
-  trafficSourceLabel,
-  trafficSourceTone,
-} from "@/app/data/trafficSources";
+  LEAD_SOURCES,
+  leadSourceLabel,
+  leadSourceTone,
+} from "@/app/data/attribution";
+import { contactsSharingPhone } from "@/app/data/contactDuplicates";
 import { resolveCampaign, resolveCampaignId } from "@/app/data/campaignUtils";
 
 type ActiveView = "all" | "broker" | "lender" | "partner";
@@ -54,7 +54,7 @@ function companiesOf(contact: Contact): string[] {
  * The full path is still available on hover.
  */
 function TrafficSourceCell({ contact }: { contact: Contact }) {
-  const { trafficSource } = resolveAttribution(contact);
+  const trafficSource = contact.leadSource;
 
   if (!trafficSource) {
     return <span className="text-xs text-muted-foreground">Unknown</span>;
@@ -63,9 +63,9 @@ function TrafficSourceCell({ contact }: { contact: Contact }) {
   return (
     <span
       title={attributionSummary(contact)}
-      className={`inline-flex w-fit px-2 py-0.5 rounded-full border text-xs whitespace-nowrap ${trafficSourceTone(trafficSource)}`}
+      className={`inline-flex w-fit px-2 py-0.5 rounded-full border text-xs whitespace-nowrap ${leadSourceTone(trafficSource)}`}
     >
-      {trafficSourceLabel(trafficSource)}
+      {leadSourceLabel(trafficSource)}
     </span>
   );
 }
@@ -82,6 +82,8 @@ export function ContactList() {
   const [importSource, setImportSource] = useState<ContactImportSource | null>(null);
 
   // Filter dropdown options are derived from the data, like the real filter-data hook.
+  const sharesPhone = useMemo(() => contactsSharingPhone(contacts), [contacts]);
+
   const companyOptions = useMemo(
     () => [...new Set(contacts.flatMap(companiesOf))].sort(),
     [contacts],
@@ -133,12 +135,24 @@ export function ContactList() {
 
     if (filters.trafficSource !== "ALL") {
       result = result.filter(
-        (c) => resolveAttribution(c).trafficSource === filters.trafficSource,
+        (c) => c.leadSource === filters.trafficSource,
       );
     }
 
     if (filters.campaign !== "ALL") {
       result = result.filter((c) => resolveCampaignId(c) === filters.campaign);
+    }
+
+    // Possible duplicates, computed rather than flagged at write time.
+    //
+    // Email is the only matching key, so somebody using a work address on one form
+    // and a personal one on another becomes two contacts. Nothing detects that at
+    // ingest — by design, since the alternative is matching on a phone number that a
+    // household or a business line may share. It surfaces here instead, the same way
+    // HubSpot surfaces its duplicates: as a list to review, not an automatic merge.
+    if (filters.identityReview !== "ALL") {
+      const wanted = filters.identityReview === "DUPLICATES";
+      result = result.filter((c) => sharesPhone.has(c.id) === wanted);
     }
 
     if (filters.createdFrom) {
@@ -163,7 +177,7 @@ export function ContactList() {
     }
 
     return result;
-  }, [contacts, searchTerm, activeView, attributionIds, filters]);
+  }, [contacts, searchTerm, activeView, attributionIds, filters, sharesPhone]);
 
   // per-node contact counts (descendant-inclusive) for the filter tree badges
   const attributionCounts = useMemo(() => {
@@ -259,7 +273,12 @@ export function ContactList() {
           roles={roleOptions}
           statuses={CONTACT_STATUSES}
           assignees={assigneeOptions}
-          trafficSources={TRAFFIC_SOURCES.map((s) => ({
+          identityReviewOptions={[
+            { value: "ALL", label: "All contacts" },
+            { value: "DUPLICATES", label: "Possible duplicates" },
+            { value: "UNIQUE", label: "No duplicate found" },
+          ]}
+          trafficSources={LEAD_SOURCES.map((s: (typeof LEAD_SOURCES)[number]) => ({
             value: s.id,
             label: s.label,
           }))}

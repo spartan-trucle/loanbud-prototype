@@ -124,25 +124,51 @@ export interface Contact {
   isDoNotCall?: boolean;
   /** V2 (RFC-009): attribution taxonomy classification — id of the deepest AttributionNode this contact resolves to. */
   attributionNodeId?: string;
-  /** Mirrors `contacts.lead_source` — the ingest channel that first created this contact. */
+  /**
+   * Mirrors `contacts.lead_source` — which channel produced this lead.
+   *
+   * **First touch wins.** A contact who first arrived through BizBuySell keeps that
+   * origin even after later filling in a Facebook form: attribution answers a
+   * historical question, so a return visit must not move it, or last month's
+   * reporting changes every time somebody clicks an ad.
+   *
+   * "Most recent touch" is deliberately NOT a field: it is a query over
+   * `inboundLeadEvents`, which holds one row per submission and so returns the whole
+   * history rather than only the last of it.
+   */
   leadSource?: string;
-  /** Flat attribution: the closed-enum traffic source. Falls back to the taxonomy path when absent. */
-  originalTrafficSource?: TrafficSourceId;
-  /** Drill-down 1 (utm_source / platform). */
-  sourceDetail1?: string;
-  /** Drill-down 2 (utm_content / utm_term, ad set, keyword). */
-  sourceDetail2?: string;
-  /** Campaign this contact is attributed to — a first-class object, not a taxonomy level. */
+  /**
+   * Mirrors `contacts.attribution_source` — which system created the record, and the
+   * field that gates who may see this contact. Write-once: the backend's update path
+   * has no parameter for it at all.
+   */
+  attributionSource?: string;
+  /** Campaign this contact is attributed to. Wave 3 — the underlying platform id is
+   *  captured on the inbound event from day one, and backfilled here later. */
   campaignId?: string;
-  /** Answers to admin-defined custom fields, keyed by CustomFieldDefinition.key. */
-  customFields?: Record<string, string>;
   /** Mirrors `contacts.status` — lifecycle state used by the contact list Status filter. */
   status?: ContactStatus;
   /** Record visibility. The CRM only exposes PUBLIC today; kept as a field for parity. */
   visibility?: ContactVisibility;
   /** Id of the Company acting as this contact's office. */
   officeCompanyId?: string;
+
+  /**
+   * The four underwriting criteria **as the lead typed them into an ad**.
+   *
+   * The `lead` prefix is load-bearing. These are self-reported on a Facebook form by
+   * someone who wants money; the verified figures live on the application and are the
+   * ones a decision is made on. A bare name like `ficoScore` would invite the next
+   * person to treat this as the truth and stop looking at `Application`.
+   */
+  leadFicoMin?: number;
+  leadFicoMax?: number;
+  leadFundingPurpose?: string;
+  leadRequestedAmount?: number;
+  /** How soon the lead says they need the money. Mirrors the CRM's own column. */
+  timeFrame?: string;
 }
+
 
 /** Contact lifecycle status (mirrors the CRM's `contacts.status` filter values). */
 export type ContactStatus = "Active" | "Inactive" | "Unqualified";
@@ -150,39 +176,49 @@ export type ContactStatus = "Active" | "Inactive" | "Unqualified";
 /** Record visibility. The CRM ships a single option today, same as the real header. */
 export type ContactVisibility = "Public";
 
-/**
- * The closed set of traffic sources — code-owned, never editable in Settings.
- *
- * Deliberately a subset of HubSpot's ten: these are the channels LoanBud can attribute
- * today (referrals, offline/untracked forms, our own email) plus the two paid channels
- * being run now. The web-tracked ones — Organic search, Organic social, Direct traffic,
- * AI referrals, Other campaigns — need website analytics that is not connected yet, so
- * leads that would belong to them currently land in `offline-sources`.
- *
- * To add one back: add the member here, add a row to TRAFFIC_SOURCES in
- * data/trafficSources.ts, and teach trafficSourceFromUtm() how to reach it.
- */
-export type TrafficSourceId =
-  | "referrals"
-  | "offline-sources"
-  | "paid-social"
-  | "paid-search"
-  | "email-marketing";
-
 export type CampaignStatus = "Draft" | "Active" | "Paused" | "Completed";
+
+/**
+ * One campaign object on the ad platform side. A CRM campaign fans out to many of
+ * these on purpose: eight of LoanBud's eleven live Meta campaigns belong to the same
+ * "Epsilon" program, and spend only means anything once they are added up.
+ *
+ * `externalId` is the key — `externalName` is for display only, because marketers
+ * rename campaigns inside Ads Manager and the id is what survives that.
+ */
+export interface CampaignExternalRef {
+  /** Ad platform slug, e.g. "meta" or "google". */
+  platform: string;
+  /** The platform's own campaign id — the join key. */
+  externalId: string;
+  /** The platform's current campaign name. Display only; never match on it. */
+  externalName: string;
+}
 
 /**
  * A marketing campaign — its own object, keyed by `utmCampaign`. Contacts point at
  * it, so one campaign running across several channels stays a single row.
+ *
+ * There is no single `channel` field: a campaign's channels are derived from its
+ * `externalRefs` and from the traffic sources of the contacts attributed to it, both
+ * of which can be more than one.
  */
 export interface Campaign {
   id: string;
   name: string;
   /** The `utm_campaign` value that links inbound leads to this campaign. */
   utmCampaign: string;
-  /** Primary channel; a campaign can still receive contacts from other sources. */
-  channel: TrafficSourceId;
   status: CampaignStatus;
+  /**
+   * Total media spend, in USD.
+   *
+   * @deprecated ROI is not in scope — Burke asked to trace which campaign a lead came
+   * from, not what it cost. Nothing reads this today; it is kept as a placeholder so
+   * the seeded numbers survive until cost reporting is actually asked for.
+   */
+  spend?: number;
+  /** The platform-side campaigns this one rolls up. */
+  externalRefs?: CampaignExternalRef[];
   startDate?: Date;
   endDate?: Date;
   description?: string;
@@ -206,13 +242,164 @@ export interface LeadFormPayload {
   utmTerm?: string;
 }
 
+/** Which surface a Meta Instant Form impression was served on. */
+export type MetaPlatform = "facebook" | "instagram";
+
+/**
+ * What Meta's Lead Ads webhook delivers.
+ *
+ * Deliberately UTM-free: an Instant Form opens inside Facebook or Instagram, the lead
+ * never loads a page we control, and no `utm_*` exists to read. Attribution comes
+ * from the platform's own ids instead — which is why this is a separate payload shape
+ * with a separate adapter rather than a few extra fields on `LeadFormPayload`.
+ */
+export interface MetaLeadPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  /** Instant Form id — the stable key for the form. */
+  formId: string;
+  /** Form name as it currently reads in Meta. Display only. */
+  formName: string;
+  /** Meta campaign id. The join key for find-or-create; the name never is. */
+  campaignId?: string;
+  campaignName?: string;
+  adsetId?: string;
+  adsetName?: string;
+  adId?: string;
+  adName?: string;
+  platform: MetaPlatform;
+  /** True when the form was opened from an unpaid post rather than an ad. */
+  isOrganic?: boolean;
+  /** Questionnaire answers keyed by field key; unknown keys are auto-discovered. */
+  answers: Record<string, string>;
+}
+
+/**
+ * A connected page or ad account on an advertising platform.
+ *
+ * Lead forms hang off one of these because the connection has state of its own —
+ * who authorised it, when, and how much history it back-fills — none of which
+ * belongs on the individual forms.
+ */
+export interface PlatformAccount {
+  id: string;
+  /** Platform slug, e.g. "meta". */
+  platform: string;
+  /** "page" | "ad_account". */
+  accountKind: string;
+  /** The platform's own id for the page or account — the key. */
+  externalRef: string;
+  displayName: string;
+  isActive: boolean;
+  /** "New & recent leads" | "New leads only". */
+  /** Whether contacts created by this sync count against the marketing quota. */
+  setAsMarketingContacts: boolean;
+  /** The CRM user who authorised the connection. */
+  connectedByName: string;
+  connectedAt: Date;
+  /** Their account name on the platform — often not the same person's CRM name. */
+  externalUserName: string;
+}
+
+/** Where a form answer lands: a built-in contact column, or a custom field. */
+export type MappingTargetKind = "core" | "custom";
+
+/** The built-in contact columns a form answer can be routed to. */
+export type CoreMappingTarget = "firstname" | "lastname" | "email" | "phone";
+
+/** One question on a lead form, and the CRM field its answer lands in. */
+export interface LeadFormFieldMapping {
+  /** The platform's own question key, verbatim. What the form actually asked. */
+  externalKey: string;
+  /**
+   * The question's input type on the platform — "Short answer", "Multiple choice",
+   * "Number". Kept because it is what makes a mismatch detectable: a multiple choice
+   * routed into a free-text field arrives intact and loses its option set silently.
+   */
+  externalType?: string;
+  /**
+   * Where the answer goes: a `CoreMappingTarget` when `targetKind` is "core", a
+   * CustomFieldDefinition key when it is "custom". Empty means the form sends this
+   * question but nothing has been told to receive it — the answer is kept, unused.
+   */
+  targetKey: string;
+  targetKind: MappingTargetKind;
+  /** Position of the question on the form. */
+  order: number;
+  /** Deliberately not collected — distinct from simply not mapped yet. */
+  isIgnored?: boolean;
+}
+
+/**
+ * A lead form as it exists on the platform.
+ *
+ * The point of the mappings is that two forms can ask the same thing in different
+ * words — "What is your FICO® credit score?" and "What is your FICO score?" — and
+ * both land in one CRM field. The question text stays with the form, so a contact's
+ * detail page can show what *that* form asked rather than a normalised label.
+ */
+export interface LeadFormDefinition {
+  id: string;
+  /** Platform slug, e.g. "meta". */
+  platform: string;
+  /** Id of the PlatformAccount this form belongs to. */
+  platformAccountId: string;
+  /** The platform's own form id — the key. `name` is display only. */
+  externalRef: string;
+  name: string;
+  isActive: boolean;
+  /** When the form was created on the platform, not in the CRM. */
+  createdAtExternal?: Date;
+  /**
+   * When submissions were last pulled from the platform.
+   *
+   * A timestamp, not a count — this is a fact about the sync itself and cannot be
+   * derived from the contacts, whereas the number of submissions can and therefore
+   * is not stored.
+   */
+  submissionsLastSyncedAt?: Date;
+  fieldMappings: LeadFormFieldMapping[];
+}
+
+/** How the CRM decided which campaign an ingested lead belongs to. */
+export type CampaignMatchKey = "utm_campaign" | "meta_campaign_id";
+
+/**
+ * How the CRM decided who a submission belongs to.
+ *
+ * Email first, phone second, and nothing third. The third case is not an error — a
+ * lead ad can be submitted with neither — so it is a named outcome rather than a
+ * silent drop.
+ */
+export type LeadIdentityKind = "email" | "phone" | "none";
+
+
 /** What the CRM did with an ingested form submission — drives the demo screen's result panel. */
 export interface LeadIngestResult {
-  contact: Contact;
-  trafficSource: TrafficSourceId;
+  /** Absent when the submission was skipped — see `identity`. */
+  contact?: Contact;
+  /** Which identifier the contact was matched or created on. */
+  identity?: LeadIdentityKind;
+  /** True when no contact was created: no email, and policy or phone did not allow one. */
+  skipped?: boolean;
+  /** The lead source the worker resolved. May differ from what was stored — first touch wins. */
+  leadSource: string;
+  /** True when an existing contact already had a lead source, so this one was NOT stored. */
+  leadSourceKept?: boolean;
   campaignId: string | null;
   campaignCreated: boolean;
   discoveredKeys: string[];
+  /** Which field the campaign was matched on. Null when no campaign was resolved. */
+  campaignMatchedBy: CampaignMatchKey | null;
+  /** The value that was matched — the utm_campaign key, or the Meta campaign id. */
+  campaignMatchValue?: string;
+  /**
+   * True when the email already belonged to a contact. The original traffic source
+   * was left alone and the latest one was updated instead.
+   */
+  isReturningContact: boolean;
 }
 
 /** A company record — mirrors the CRM's companies list. */
@@ -247,6 +434,37 @@ export interface ListingRecord {
   updatedAt?: Date;
 }
 
+/**
+ * One answer a lead gave to one form question — the prototype's mirror of the
+ * `contact_lead_answers` table (RFC-013 rev 18).
+ *
+ * Deliberately NOT a `Record<string, string>` on the Contact. The segment builder
+ * can only filter on a real typed column, so a blob of answers is unfilterable:
+ * `value` backs equality/IN, and `valueMin`/`valueMax` back range comparisons with
+ * no cast. A bucketed answer ("580-639", "Under $100k") is a range, not a scalar —
+ * which is why there are two bounds rather than one number.
+ *
+ * One row per contact per question: a second submission updates the answer in place
+ * rather than appending, and a question the newer form did not ask keeps its earlier
+ * answer. Full per-submission history lives on InboundLeadEvent.
+ */
+export interface ContactLeadAnswer {
+  id: string;
+  contactId: string;
+  /** The mapped key the answer lands under — LeadFormFieldMapping.targetKey. */
+  targetKey: string;
+  /** Normalised answer text: "580-639", never "580-639_(poor)". */
+  value: string;
+  /** Lower bound when the answer is numeric. Equal to valueMax for a scalar. */
+  valueMin?: number;
+  /** Upper bound when the answer is numeric. Absent for an open-ended "720+". */
+  valueMax?: number;
+  /** The form this answer came from. */
+  leadFormId?: string;
+  /** When the lead answered — Meta's created_time, not our arrival time. Newest wins. */
+  answeredAt: string;
+}
+
 export type CustomFieldType = "text" | "number" | "date" | "select";
 
 /**
@@ -261,7 +479,9 @@ export interface CustomFieldDefinition {
   type: CustomFieldType;
   /** Options for `select` fields. */
   options?: string[];
-  /** Which detail section it renders under. */
+  /** What the field means. Shown as a tooltip beside the label. */
+  description?: string;
+  /** Which detail section it renders under. Shown in the UI as "Group". */
   section: string;
   /** Hidden fields are stored but not shown — the default for auto-discovered keys. */
   isVisible: boolean;
@@ -270,6 +490,14 @@ export interface CustomFieldDefinition {
   /** Discovered from an inbound form payload rather than created by an admin. */
   isAutoDiscovered: boolean;
   createdAt: Date;
+  /**
+   * When the field was archived. Archived fields disappear from the contact tab and
+   * the segment builder but keep every answer already stored under their key.
+   *
+   * There is no delete. `Contact.customFields[key]` is the only copy of what a lead
+   * typed into an ad, and dropping the definition would orphan it with no way back.
+   */
+  archivedAt?: Date;
 }
 
 /** Where a bulk contact import originated. Drives the import modal's parsing rules. */
@@ -332,19 +560,55 @@ export interface Task {
   disposition?: "Answered" | "VM Left" | "No Answer" | "Not Needed" | string;
 }
 
+/** The contact columns a segment can filter on, before custom fields are added. */
+export type CoreFilterField =
+  | "listingStatus"
+  | "userType"
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "phone"
+  | "listingName"
+  | QualificationField;
+
+/**
+ * A filter's field id.
+ *
+ * `(string & {})` widens this to any string — a filterable CustomFieldDefinition
+ * contributes its own `key` as a field id — while keeping the core names as
+ * autocomplete suggestions rather than losing them to a bare `string`.
+ */
+export type FilterFieldId = CoreFilterField | (string & {});
+
 export interface FilterRule {
-  field:
-    | "listingStatus"
-    | "userType"
-    | "firstName"
-    | "lastName"
-    | "email"
-    | "phone"
-    | "listingName";
-  operator: "=" | "!=" | "contains" | "not_contains";
+  field: FilterFieldId;
+  operator:
+    | "="
+    | "!="
+    | "contains"
+    | "not_contains"
+    | ">"
+    | "<"
+    | ">="
+    | "<="
+    | "before"
+    | "after";
   value: string;
   logic: "and" | "or";
 }
+
+/**
+ * The four underwriting criteria a segment can filter on.
+ *
+ * Named after the CRM's own columns rather than after either source, because a rule
+ * on one of these matches an application value *or* a lead-declared value — see
+ * `matchesQualificationRule`.
+ */
+export type QualificationField =
+  | "self_reported_fico"
+  | "funding_purpose"
+  | "requested_amount"
+  | "funding_timeline";
 
 export interface FilterGroup {
   id: string;
@@ -537,6 +801,23 @@ export interface Application {
   loanAmount: number;
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * When the loan actually funded. `stage === "Funded"` stays the single source of
+   * truth for *whether* it funded — this is only the date, so campaign reporting can
+   * say when the money landed without a second boolean to keep in sync.
+   */
+  fundedAt?: Date;
+
+  /**
+   * The same four criteria, captured on the application itself. These are what
+   * segments should match on first; the contact's `lead*` fields only carry weight
+   * for people who have not applied yet.
+   */
+  selfReportedFicoMin?: number;
+  selfReportedFicoMax?: number;
+  fundingPurpose?: string;
+  requestedAmount?: number;
+  timeFrame?: string;
 }
 
 export type BusinessAcquisitionStage =
@@ -734,7 +1015,10 @@ export type FilterFieldV2 =
   | "optedOut"
   | "hasActiveEnrollment"
   | "enrolledInWorkflow"
-  | "lastContacted";
+  | "lastContacted"
+  | QualificationField
+  // Custom fields contribute their key; see FilterFieldId.
+  | (string & {});
 
 export type FilterOperatorV2 =
   | "="
@@ -775,4 +1059,74 @@ export interface LoGroup {
   memberNames: string[];
   isActive: boolean;
   createdAt: Date;
+}
+
+
+/* ─── Attribution ─────────────────────────────────────────────────────────────
+ * RFC-013 rev 19: contact attribution needs NO new fields. `attributionSource` and
+ * `leadSource` already carry it, and both are already frozen — the first by having
+ * no update path at all, the second by a first-touch guard.
+ *
+ * Six fields were proposed across earlier revisions and all six were dropped; the
+ * reasoning lives on `data/attribution.ts`. The lead-source vocabulary is data, not
+ * a union type, because `lead_source` is free text in the database and unknown
+ * values from other integrations are real.
+ */
+
+/* ─── Inbound lead events ─────────────────────────────────────────────────────
+ * The raw inbox. One row per submission, kept whole and forever, written before
+ * anything about it is interpreted. Every deferred feature is built later against
+ * this rather than against a re-fetch that is no longer possible.
+ */
+
+/** Whether the pipeline finished. Separate from what it concluded. */
+export type InboundEventStatus = "received" | "processed" | "failed";
+
+/**
+ * What the worker concluded about identity.
+ *
+ * **Email is the only matching key.** This follows HubSpot, which staff already use,
+ * and it is stricter than treating phone as a signal too: a phone number is routinely
+ * shared by a couple, a household, or a business line, so matching on it can attach a
+ * lead to the wrong person. Refusing to look at it removes that failure entirely.
+ *
+ * The database makes the rest simple. `contacts.email` carries a unique index over
+ * active rows, so a lookup returns nought or one — never several. There is no
+ * ambiguity branch to write because there is no ambiguity to have.
+ *
+ * The cost is duplicates: somebody using a work address on one form and a personal
+ * one on another becomes two contacts. Those surface in a possible-duplicates view
+ * computed from shared phone numbers, and are merged by hand — the same trade HubSpot
+ * makes, and the visible failure rather than the silent one.
+ */
+export type LeadResolution = "matched" | "created" | "skipped";
+
+export type LeadResolutionReason =
+  | "matched_email"
+  | "created_new"
+  /** No email on the submission, and the form is set not to create contacts without one. */
+  | "no_email";
+
+
+export interface InboundLeadEvent {
+  id: string;
+  platform: string;
+  /** The platform's own submission id. Unique per platform — this is what makes a
+   *  retry harmless, and it is why the table can dedupe permanently where a queue
+   *  could only dedupe inside a short window. */
+  externalEventId: string;
+  externalFormId?: string;
+  /** Stored although Campaigns do not exist until Wave 3, so that wave can backfill
+   *  instead of starting from nothing. */
+  externalCampaignId?: string;
+  /** What the person actually submitted, before any of our interpretation. */
+  answers: Record<string, string>;
+  contactId?: string;
+  status: InboundEventStatus;
+  resolution: LeadResolution;
+  resolutionReason: LeadResolutionReason;
+  receivedAt: Date;
+  /** Set when an operator has worked the row. */
+  resolvedAt?: Date;
+  resolvedByNote?: string;
 }

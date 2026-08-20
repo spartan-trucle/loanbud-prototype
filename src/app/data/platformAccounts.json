@@ -1,0 +1,14 @@
+[
+  {
+    "id": "meta-page-loanbud",
+    "platform": "meta",
+    "accountKind": "page",
+    "externalRef": "102896062562677",
+    "displayName": "LoanBud",
+    "isActive": true,
+    "setAsMarketingContacts": true,
+    "connectedByName": "Mason Bray",
+    "connectedAt": "2026-04-29T00:00:00.000Z",
+    "externalUserName": "Mason K. Bray"
+  }
+]

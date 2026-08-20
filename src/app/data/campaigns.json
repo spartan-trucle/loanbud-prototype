@@ -3,28 +3,43 @@
     "id": "meta-black-friday",
     "name": "Black Friday 2026",
     "utmCampaign": "black_friday_2026",
-    "channel": "paid-social",
     "status": "Active",
+    "spend": 24800,
+    "externalRefs": [
+      { "platform": "meta", "externalId": "23851004417650133", "externalName": "Epsilon | Prospecting | BO 25-54 US" },
+      { "platform": "meta", "externalId": "23851004417650134", "externalName": "Epsilon | Prospecting | Lookalike 1%" },
+      { "platform": "meta", "externalId": "23851004417650135", "externalName": "Epsilon | Retargeting | Site 30d" },
+      { "platform": "meta", "externalId": "23851004417650136", "externalName": "Epsilon | Retargeting | Video 50%" },
+      { "platform": "meta", "externalId": "23851004417650137", "externalName": "Epsilon | Lead form V2" },
+      { "platform": "meta", "externalId": "23851004417650138", "externalName": "Epsilon | Lead form V3" },
+      { "platform": "meta", "externalId": "23851004417650139", "externalName": "Epsilon | Advantage+ broad" },
+      { "platform": "meta", "externalId": "23851004417650140", "externalName": "Epsilon | Reels placement test" }
+    ],
     "startDate": "2026-06-01T00:00:00.000Z",
-    "description": "Meta Ads push targeting business owners considering an acquisition.",
+    "description": "Meta Ads push targeting business owners considering an acquisition. Eight Meta campaigns in the Epsilon program roll up here.",
     "createdAt": "2026-05-20T00:00:00.000Z"
   },
   {
     "id": "summer-sba-2026",
     "name": "Summer SBA 2026",
     "utmCampaign": "summer_sba_2026",
-    "channel": "paid-search",
     "status": "Active",
+    "spend": 12400,
+    "externalRefs": [
+      { "platform": "google", "externalId": "20481553907", "externalName": "SBA 7(a) — Working capital [exact]" },
+      { "platform": "google", "externalId": "20481553908", "externalName": "SBA 7(a) — Acquisition [phrase]" },
+      { "platform": "meta", "externalId": "23851004418220441", "externalName": "Summer SBA | Retargeting | Search visitors" }
+    ],
     "startDate": "2026-06-15T00:00:00.000Z",
-    "description": "Google Ads on SBA 7(a) working-capital terms.",
+    "description": "Google Ads on SBA 7(a) working-capital terms, with a Meta retargeting layer on search visitors.",
     "createdAt": "2026-06-10T00:00:00.000Z"
   },
   {
     "id": "em-monthly-newsletter",
     "name": "Monthly newsletter",
     "utmCampaign": "monthly_newsletter",
-    "channel": "email-marketing",
     "status": "Active",
+    "spend": 900,
     "startDate": "2026-01-01T00:00:00.000Z",
     "description": "Evergreen monthly send to the full opted-in list.",
     "createdAt": "2025-12-15T00:00:00.000Z"
@@ -33,8 +48,8 @@
     "id": "em-rate-drop",
     "name": "Rate-drop announcement",
     "utmCampaign": "rate_drop_announcement",
-    "channel": "email-marketing",
     "status": "Completed",
+    "spend": 450,
     "startDate": "2026-03-01T00:00:00.000Z",
     "endDate": "2026-03-31T00:00:00.000Z",
     "description": "One-off blast when SBA rates moved.",
@@ -44,18 +59,20 @@
     "id": "oc-webinar",
     "name": "Q3 webinar series",
     "utmCampaign": "q3_webinar_series",
-    "channel": "offline-sources",
     "status": "Draft",
     "startDate": "2026-09-01T00:00:00.000Z",
-    "description": "Three-part webinar for brokers on deal structuring.",
+    "description": "Three-part webinar for brokers on deal structuring. Not launched, so nothing has been spent.",
     "createdAt": "2026-07-28T00:00:00.000Z"
   },
   {
     "id": "bbs-checkbox-leads",
     "name": "BizBuySell checkbox leads",
     "utmCampaign": "bizbuysell_checkbox",
-    "channel": "referrals",
     "status": "Active",
+    "spend": 3200,
+    "externalRefs": [
+      { "platform": "bizbuysell", "externalId": "bbs-listing-checkbox", "externalName": "Financing checkbox placement" }
+    ],
     "startDate": "2025-11-01T00:00:00.000Z",
     "description": "Leads arriving from the BizBuySell financing checkbox.",
     "createdAt": "2025-10-20T00:00:00.000Z"
@@ -64,10 +81,12 @@
     "id": "bbs-api-leads",
     "name": "BizBuySell API leads",
     "utmCampaign": "bizbuysell_api",
-    "channel": "referrals",
     "status": "Active",
+    "externalRefs": [
+      { "platform": "bizbuysell", "externalId": "bbs-partner-api", "externalName": "Partner API feed" }
+    ],
     "startDate": "2025-11-01T00:00:00.000Z",
-    "description": "Leads pushed directly by the BizBuySell integration.",
+    "description": "Leads pushed directly by the BizBuySell integration. The partner invoice is not wired into the CRM, so spend is unknown.",
     "createdAt": "2025-10-20T00:00:00.000Z"
   }
 ]

@@ -67,7 +67,7 @@ There is no V1/V2 toggle — the V2 components are the only implementation.
 - `ContactQuestionnaireSection.tsx` — renders admin-defined custom fields
 - `ContactOfficeAndSegments.tsx`, `ContactCommunicationsTab.tsx`, `ExtraWorkflows.tsx`, `PauseAllCommsModal.tsx`, `AttributionFilterPopover.tsx`
 - `CompanyList.tsx`, `ListingList.tsx`, `InboxPage.tsx` (email + SMS conversations)
-- `CRMSettings.tsx` + `CrmSettingsSections.tsx` + `CustomFieldsSettings.tsx` — settings shell and its sections
+- `CRMSettings.tsx` + `CrmSettingsSections.tsx` — settings shell and its sections (Lead syncing lives in `LeadSyncingSettings.tsx`; there is no Custom fields screen)
 - `LeadFormIngest.tsx` — simulates a marketing form posting into the CRM
 - `campaigns/` — `CampaignList`, `CampaignDetail`, `CampaignFormModal`
 

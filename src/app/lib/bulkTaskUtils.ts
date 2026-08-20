@@ -1,4 +1,4 @@
-import type { Contact, Segment } from "../types";
+import type { Application, Contact, Segment } from "../types";
 import { getContactSegments } from "./segmentUtils";
 
 /**
@@ -28,9 +28,20 @@ export interface BulkAssignmentResult {
 
 const contactName = (c: Contact) => `${c.firstName} ${c.lastName}`;
 
-/** Contacts that currently belong to a given segment (reuses segment matching). */
-export function contactsInSegment(segment: Segment, contacts: Contact[]): Contact[] {
-  return contacts.filter((c) => getContactSegments(c, [segment]).some((s) => s.id === segment.id));
+/**
+ * Contacts that currently belong to a given segment (reuses segment matching).
+ *
+ * `applications` is needed because a segment can filter on the underwriting criteria,
+ * which live on the application as well as on the contact.
+ */
+export function contactsInSegment(
+  segment: Segment,
+  contacts: Contact[],
+  applications: Application[] = [],
+): Contact[] {
+  return contacts.filter((c) =>
+    getContactSegments(c, [segment], applications).some((s) => s.id === segment.id),
+  );
 }
 
 /** A CALL task to a Do-Not-Call contact is the DNC warn-and-choose case. */

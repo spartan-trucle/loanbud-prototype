@@ -27,6 +27,7 @@ interface ContactsFilterBarProps {
   statuses: string[];
   assignees: string[];
   trafficSources: FilterOption[];
+  identityReviewOptions: FilterOption[];
   campaigns: FilterOption[];
 }
 
@@ -41,6 +42,7 @@ export function ContactsFilterBar({
   statuses,
   assignees,
   trafficSources,
+  identityReviewOptions,
   campaigns,
 }: ContactsFilterBarProps) {
   const set = <K extends keyof ContactFilters>(key: K, value: ContactFilters[K]) =>
@@ -85,6 +87,12 @@ export function ContactsFilterBar({
         value={filters.campaign}
         options={campaigns}
         onChange={(v) => set("campaign", v)}
+      />
+      <FilterSelect
+        label="Identity"
+        value={filters.identityReview}
+        options={identityReviewOptions}
+        onChange={(v) => set("identityReview", v)}
       />
 
       <div className="flex items-center gap-1.5">

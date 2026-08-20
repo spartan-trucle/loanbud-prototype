@@ -1,0 +1,272 @@
+[
+  {
+    "id": "form-rich-creative-v2",
+    "platform": "meta",
+    "platformAccountId": "meta-page-loanbud",
+    "externalRef": "1204487339112045",
+    "name": "Lead Form_Rich Creative_2026_V2",
+    "isActive": true,
+    "createdAtExternal": "2026-05-21T00:00:00.000Z",
+    "fieldMappings": [
+      {
+        "externalKey": "what_is_the_purpose_of_the_loan?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_purpose",
+        "targetKind": "custom",
+        "order": 1
+      },
+      {
+        "externalKey": "what_is_your_timeline_for_accessing_the_funds?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_timeline",
+        "targetKind": "custom",
+        "order": 2
+      },
+      {
+        "externalKey": "what_is_your_fico®_credit_score?",
+        "externalType": "Multiple choice",
+        "targetKey": "self_reported_fico",
+        "targetKind": "custom",
+        "order": 3
+      },
+      {
+        "externalKey": "how_much_funding_do_you_need?_(enter_any_amount_between_$25,000_and_$5,000,000)",
+        "externalType": "Number",
+        "targetKey": "requested_amount",
+        "targetKind": "custom",
+        "order": 4
+      },
+      {
+        "externalKey": "first_name",
+        "externalType": "Short answer",
+        "targetKey": "firstname",
+        "targetKind": "core",
+        "order": 5
+      },
+      {
+        "externalKey": "last_name",
+        "externalType": "Short answer",
+        "targetKey": "lastname",
+        "targetKind": "core",
+        "order": 6
+      },
+      {
+        "externalKey": "email",
+        "externalType": "Email",
+        "targetKey": "email",
+        "targetKind": "core",
+        "order": 7
+      },
+      {
+        "externalKey": "phone_number",
+        "externalType": "Phone number",
+        "targetKey": "phone",
+        "targetKind": "core",
+        "order": 8
+      }
+    ],
+    "submissionsLastSyncedAt": "2026-08-18T20:06:00.000Z"
+  },
+  {
+    "id": "form-more-volume-v3",
+    "platform": "meta",
+    "platformAccountId": "meta-page-loanbud",
+    "externalRef": "1204487339112046",
+    "name": "Lead Form_More Volume_2026_V3",
+    "isActive": true,
+    "createdAtExternal": "2026-05-27T00:00:00.000Z",
+    "fieldMappings": [
+      {
+        "externalKey": "what_is_the_purpose_of_the_loan?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_purpose",
+        "targetKind": "custom",
+        "order": 1
+      },
+      {
+        "externalKey": "what_is_your_timeline_for_accessing_the_funds?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_timeline",
+        "targetKind": "custom",
+        "order": 2
+      },
+      {
+        "externalKey": "what_is_your_fico®_credit_score?",
+        "externalType": "Multiple choice",
+        "targetKey": "self_reported_fico",
+        "targetKind": "custom",
+        "order": 3
+      },
+      {
+        "externalKey": "how_much_funding_do_you_need?_(enter_any_amount_between_$25,000_and_$5,000,000)",
+        "externalType": "Number",
+        "targetKey": "requested_amount",
+        "targetKind": "custom",
+        "order": 4
+      },
+      {
+        "externalKey": "first_name",
+        "externalType": "Short answer",
+        "targetKey": "firstname",
+        "targetKind": "core",
+        "order": 5
+      },
+      {
+        "externalKey": "last_name",
+        "externalType": "Short answer",
+        "targetKey": "lastname",
+        "targetKind": "core",
+        "order": 6
+      },
+      {
+        "externalKey": "email",
+        "externalType": "Email",
+        "targetKey": "email",
+        "targetKind": "core",
+        "order": 7
+      },
+      {
+        "externalKey": "phone_number",
+        "externalType": "Phone number",
+        "targetKey": "phone",
+        "targetKind": "core",
+        "order": 8
+      }
+    ],
+    "submissionsLastSyncedAt": "2026-08-09T13:29:00.000Z"
+  },
+  {
+    "id": "form-fasttrack-2026",
+    "platform": "meta",
+    "platformAccountId": "meta-page-loanbud",
+    "externalRef": "1204487339112047",
+    "name": "2026 FastTrack Form",
+    "isActive": true,
+    "createdAtExternal": "2026-01-14T00:00:00.000Z",
+    "fieldMappings": [
+      {
+        "externalKey": "what_is_the_purpose_of_the_loan?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_purpose",
+        "targetKind": "custom",
+        "order": 1
+      },
+      {
+        "externalKey": "how_quickly_do_you_need_access_to_the_funds?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_timeline",
+        "targetKind": "custom",
+        "order": 2
+      },
+      {
+        "externalKey": "what_is_your_fico_score?",
+        "externalType": "Multiple choice",
+        "targetKey": "",
+        "targetKind": "custom",
+        "order": 3
+      },
+      {
+        "externalKey": "how_much_funding_do_you_need?",
+        "externalType": "Number",
+        "targetKey": "requested_amount",
+        "targetKind": "custom",
+        "order": 4
+      },
+      {
+        "externalKey": "how_long_have_you_been_in_business?",
+        "externalType": "Number",
+        "targetKey": "years_in_business",
+        "targetKind": "custom",
+        "order": 5
+      },
+      {
+        "externalKey": "full_name",
+        "externalType": "Short answer",
+        "targetKey": "firstname",
+        "targetKind": "core",
+        "order": 6
+      },
+      {
+        "externalKey": "email",
+        "externalType": "Email",
+        "targetKey": "email",
+        "targetKind": "core",
+        "order": 7
+      },
+      {
+        "externalKey": "phone_number",
+        "externalType": "Phone number",
+        "targetKey": "phone",
+        "targetKind": "core",
+        "order": 8
+      }
+    ],
+    "submissionsLastSyncedAt": "2026-08-17T09:14:00.000Z"
+  },
+  {
+    "id": "form-spartan-testing",
+    "platform": "meta",
+    "platformAccountId": "meta-page-loanbud",
+    "externalRef": "1204487339112048",
+    "name": "Spartan Testing | 2026 FastTrack Form",
+    "isActive": false,
+    "createdAtExternal": "2026-08-02T00:00:00.000Z",
+    "fieldMappings": [
+      {
+        "externalKey": "what_is_the_purpose_of_the_loan?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_purpose",
+        "targetKind": "custom",
+        "order": 1
+      },
+      {
+        "externalKey": "how_quickly_do_you_need_access_to_the_funds?",
+        "externalType": "Multiple choice",
+        "targetKey": "funding_timeline",
+        "targetKind": "custom",
+        "order": 2
+      },
+      {
+        "externalKey": "how_much_funding_do_you_need?",
+        "externalType": "Number",
+        "targetKey": "requested_amount",
+        "targetKind": "custom",
+        "order": 3
+      },
+      {
+        "externalKey": "full_name",
+        "externalType": "Short answer",
+        "targetKey": "lastname",
+        "targetKind": "core",
+        "order": 4
+      },
+      {
+        "externalKey": "email",
+        "externalType": "Email",
+        "targetKey": "email",
+        "targetKind": "core",
+        "order": 5
+      },
+      {
+        "externalKey": "internal_test_note",
+        "externalType": "Short answer",
+        "targetKey": "",
+        "targetKind": "custom",
+        "order": 6,
+        "isIgnored": true
+      }
+    ],
+    "submissionsLastSyncedAt": "2026-08-03T15:52:00.000Z"
+  },
+  {
+    "id": "form-reels-lead-gen",
+    "platform": "meta",
+    "platformAccountId": "meta-page-loanbud",
+    "externalRef": "1204487339112049",
+    "name": "Reels Lead Gen_2026_V1",
+    "isActive": true,
+    "createdAtExternal": "2026-08-11T00:00:00.000Z",
+    "fieldMappings": [],
+    "submissionsLastSyncedAt": "2026-08-12T11:03:00.000Z"
+  }
+]

@@ -11,10 +11,12 @@ export interface ContactFilters {
   role: string;
   status: string;
   assignee: string;
-  /** Flat attribution: closed-enum traffic source. */
+  /** Acquisition origin — how the person reached us. */
   trafficSource: string;
   /** Campaign id — campaigns are their own object, not a taxonomy level. */
   campaign: string;
+  /** "Needs identity review" — the leads we would not attach to an existing person. */
+  identityReview: string;
   createdFrom: string;
   createdTo: string;
 }
@@ -26,6 +28,7 @@ export const EMPTY_CONTACT_FILTERS: ContactFilters = {
   assignee: "ALL",
   trafficSource: "ALL",
   campaign: "ALL",
+  identityReview: "ALL",
   createdFrom: "",
   createdTo: "",
 };
@@ -38,6 +41,7 @@ export function countActiveFilters(filters: ContactFilters): number {
     filters.assignee,
     filters.trafficSource,
     filters.campaign,
+    filters.identityReview,
   ].filter((v) => v !== "ALL").length;
   const dateRange = filters.createdFrom || filters.createdTo ? 1 : 0;
   return dropdowns + dateRange;

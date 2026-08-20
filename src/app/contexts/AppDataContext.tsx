@@ -1,8 +1,19 @@
 import { createContext, useContext, useState } from "react";
 import { toast } from "sonner";
-import type { Contact, ChannelOptOut, EmailRecord, Task, TaskItem, Application, BusinessAcquisitionRecord, Segment, FilterRule, Workflow, WorkflowEnrollment, WorkflowStep, WorkflowStepProgress, ContactActivityRecord, CustomWorkflowStep, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder, NewContactInput, ContactImportSource, Campaign, CustomFieldDefinition, LeadFormPayload, LeadIngestResult, Company, ListingRecord } from "../types";
-import { trafficSourceFromUtm } from "../data/trafficSources";
+import type { Contact, ChannelOptOut, EmailRecord, Task, TaskItem, Application, BusinessAcquisitionRecord, Segment, FilterRule, Workflow, WorkflowEnrollment, WorkflowStep, WorkflowStepProgress, ContactActivityRecord, CustomWorkflowStep, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder, NewContactInput, ContactImportSource, Campaign, CustomFieldDefinition, LeadFormPayload, LeadFormDefinition, LeadIngestResult, MetaLeadPayload, PlatformAccount, InboundLeadEvent, ContactLeadAnswer, Company, ListingRecord } from "../types";
+import { leadSourceFromUtm, resolveLeadSource } from "../data/attribution";
 import { toUtmKey } from "../data/campaignUtils";
+import {
+  findContactByIdentity,
+  leadFormByExternalRef,
+  resolveSubmissionIdentity,
+} from "../data/leadFormUtils";
+import { upsertAnswers } from "../data/contactLeadAnswers";
+import { leadQualificationFromAnswers } from "../data/leadQualification";
+import {
+  findCampaignByExternalId,
+  metaLeadAttribution,
+} from "../data/metaLeadAds";
 import { store } from "../data/store";
 import type { TeamRole } from "../config/team";
 import { useContentLibrary } from "./useContentLibrary";
@@ -60,6 +71,21 @@ interface AppDataContextValue {
   listings: ListingRecord[];
   // Campaigns — a first-class object keyed by utm_campaign
   campaigns: Campaign[];
+  /** Lead forms as defined on the platform, with the CRM's field mappings. */
+  leadForms: LeadFormDefinition[];
+  handleUpdateLeadForm: (id: string, updates: Partial<LeadFormDefinition>) => void;
+  contactLeadAnswers: ContactLeadAnswer[];
+  inboundLeadEvents: InboundLeadEvent[];
+  /** Operator decision on a lead the worker could not confidently place. */
+  handleResolveLeadEvent: (eventId: string, contactId: string | null, note: string) => void;
+  /** Confirm — or undo — a match the worker made on the weaker signal. */
+  handleConfirmLeadEvent: (eventId: string, keepMatch: boolean, note: string) => void;
+  /** Connected pages / ad accounts the forms belong to. */
+  platformAccounts: PlatformAccount[];
+  handleUpdatePlatformAccount: (
+    id: string,
+    updates: Partial<PlatformAccount>,
+  ) => void;
   handleCreateCampaign: (input: Omit<Campaign, "id" | "createdAt">) => Campaign;
   handleUpdateCampaign: (id: string, updates: Partial<Campaign>) => void;
   handleDeleteCampaign: (id: string) => void;
@@ -72,10 +98,15 @@ interface AppDataContextValue {
     id: string,
     updates: Partial<CustomFieldDefinition>,
   ) => void;
-  handleDeleteCustomField: (id: string) => void;
+  /** Archives a field: hidden everywhere, every stored answer kept. There is no delete. */
+  handleArchiveCustomField: (id: string) => void;
+  handleRestoreCustomField: (id: string) => void;
   /** Ingest a marketing form: creates the contact, resolves traffic source, links or
    *  creates the campaign, and auto-discovers unknown answer keys as hidden fields. */
   handleIngestLeadForm: (payload: LeadFormPayload) => LeadIngestResult;
+  /** Ingest a Meta Lead Ads submission: no UTM exists, so attribution and the
+   *  campaign match are derived from Meta's own ids. */
+  handleIngestMetaLead: (payload: MetaLeadPayload) => LeadIngestResult;
   /** Bulk-create from an import; rows whose email already exists are skipped. Returns counts. */
   handleImportContacts: (
     rows: NewContactInput[],
@@ -198,6 +229,19 @@ const AppDataContext = createContext<AppDataContextValue | null>(null);
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [contacts, setContacts] = useState<Contact[]>(store.contacts.read());
   const [campaigns, setCampaigns] = useState<Campaign[]>(store.campaigns.read());
+  // Defined on the ad platform; the CRM owns the mappings and the on/off switch.
+  const [contactLeadAnswers, setContactLeadAnswers] = useState<ContactLeadAnswer[]>(
+    store.contactLeadAnswers.read(),
+  );
+  const [inboundLeadEvents, setInboundLeadEvents] = useState<InboundLeadEvent[]>(
+    store.inboundLeadEvents.read(),
+  );
+  const [leadForms, setLeadForms] = useState<LeadFormDefinition[]>(
+    store.leadForms.read(),
+  );
+  const [platformAccounts, setPlatformAccounts] = useState<PlatformAccount[]>(
+    store.platformAccounts.read(),
+  );
   const [companies, setCompanies] = useState<Company[]>(store.companies.read());
   const [listings] = useState<ListingRecord[]>(store.listings.read());
   const [customFieldDefinitions, setCustomFieldDefinitions] = useState<
@@ -1081,6 +1125,65 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     return created;
   };
 
+  /**
+   * Working a lead the worker would not place on its own.
+   *
+   * `resolution` is left as the worker recorded it. That field says what the system
+   * concluded, and overwriting it with the operator's answer would erase the only
+   * evidence of how often the automatic path is wrong — which is exactly the number
+   * worth watching. The human decision is a separate fact: `resolvedAt` plus a note.
+   */
+  const handleResolveLeadEvent = (
+    eventId: string,
+    contactId: string | null,
+    note: string,
+  ) => {
+    const updated = inboundLeadEvents.map((e) =>
+      e.id === eventId
+        ? { ...e, contactId: contactId ?? undefined, resolvedAt: new Date(), resolvedByNote: note }
+        : e,
+    );
+    setInboundLeadEvents(updated);
+    store.inboundLeadEvents.write(updated);
+  };
+
+  const handleConfirmLeadEvent = (eventId: string, keepMatch: boolean, note: string) => {
+    const updated = inboundLeadEvents.map((e) =>
+      e.id === eventId
+        ? {
+            ...e,
+            // Undoing detaches the contact but keeps the submission — the answers were
+            // still received, they simply do not belong to that person.
+            contactId: keepMatch ? e.contactId : undefined,
+            resolvedAt: new Date(),
+            resolvedByNote: note,
+          }
+        : e,
+    );
+    setInboundLeadEvents(updated);
+    store.inboundLeadEvents.write(updated);
+  };
+
+  const handleUpdateLeadForm = (
+    id: string,
+    updates: Partial<LeadFormDefinition>,
+  ) => {
+    const updated = leadForms.map((f) => (f.id === id ? { ...f, ...updates } : f));
+    setLeadForms(updated);
+    store.leadForms.write(updated);
+  };
+
+  const handleUpdatePlatformAccount = (
+    id: string,
+    updates: Partial<PlatformAccount>,
+  ) => {
+    const updated = platformAccounts.map((a) =>
+      a.id === id ? { ...a, ...updates } : a,
+    );
+    setPlatformAccounts(updated);
+    store.platformAccounts.write(updated);
+  };
+
   const handleCreateCampaign = (input: Omit<Campaign, "id" | "createdAt">): Campaign => {
     const created: Campaign = {
       ...input,
@@ -1137,51 +1240,39 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     store.customFieldDefinitions.write(updated);
   };
 
-  const handleDeleteCustomField = (id: string) => {
-    const updated = customFieldDefinitions.filter((f) => f.id !== id);
+  /**
+   * Archive, never delete.
+   *
+   * A `contact_lead_answers` row is the only copy of what a lead typed into an ad.
+   * Removing the definition would leave those answers with no label, no type and no
+   * way to bring them back, so the field is hidden instead and every stored answer
+   * stays exactly where it is.
+   */
+  const handleArchiveCustomField = (id: string) => {
+    const updated = customFieldDefinitions.map((f) =>
+      f.id === id ? { ...f, archivedAt: new Date() } : f,
+    );
     setCustomFieldDefinitions(updated);
     store.customFieldDefinitions.write(updated);
   };
 
-  const handleIngestLeadForm = (payload: LeadFormPayload): LeadIngestResult => {
-    const trafficSource = trafficSourceFromUtm(payload.utmSource, payload.utmMedium);
-
-    // Find-or-create the campaign from utm_campaign — marketing never files a ticket
-    // to register a new one.
-    let campaignId: string | null = null;
-    let campaignCreated = false;
-    let nextCampaigns = campaigns;
-    const utmCampaign = payload.utmCampaign?.trim();
-
-    if (utmCampaign) {
-      const existing = campaigns.find(
-        (c) => c.utmCampaign.toLowerCase() === utmCampaign.toLowerCase(),
-      );
-      if (existing) {
-        campaignId = existing.id;
-      } else {
-        const created: Campaign = {
-          id: `campaign-${Date.now()}`,
-          name: utmCampaign,
-          utmCampaign,
-          channel: trafficSource,
-          status: "Active",
-          startDate: new Date(),
-          description: "Auto-created from an inbound lead form.",
-          createdAt: new Date(),
-        };
-        nextCampaigns = [created, ...campaigns];
-        campaignId = created.id;
-        campaignCreated = true;
-      }
-    }
-
-    // Unknown answer keys become hidden definitions: no engineering work to accept a
-    // new form, no UI clutter until an admin turns the field on.
-    const knownKeys = new Set(customFieldDefinitions.map((f) => f.key));
-    const discoveredKeys = Object.keys(payload.answers).filter(
-      (key) => !knownKeys.has(key),
+  /** Restores a field with its visibility and filterability exactly as they were. */
+  const handleRestoreCustomField = (id: string) => {
+    const updated = customFieldDefinitions.map((f) =>
+      f.id === id ? { ...f, archivedAt: undefined } : f,
     );
+    setCustomFieldDefinitions(updated);
+    store.customFieldDefinitions.write(updated);
+  };
+
+  /**
+   * Unknown answer keys become hidden definitions: no engineering work to accept a
+   * new form, no UI clutter until an admin turns the field on. Shared by every
+   * ingest adapter — the discovery rule does not depend on where the lead came from.
+   */
+  const discoverAnswerFields = (answers: Record<string, string>) => {
+    const knownKeys = new Set(customFieldDefinitions.map((f) => f.key));
+    const discoveredKeys = Object.keys(answers).filter((key) => !knownKeys.has(key));
     const nextDefinitions: CustomFieldDefinition[] = [
       ...customFieldDefinitions,
       ...discoveredKeys.map((key, index) => ({
@@ -1196,26 +1287,63 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date(),
       })),
     ];
+    return { discoveredKeys, nextDefinitions };
+  };
 
-    const contact = buildContact({
-      firstName: payload.firstName,
-      lastName: payload.lastName,
-      email: payload.email,
-      phone: payload.phone ?? "",
-      userType: "Borrower",
-      leadSource: payload.formName ?? "web_form",
-      originalTrafficSource: trafficSource,
-      sourceDetail1: payload.utmSource || undefined,
-      sourceDetail2: payload.utmContent || payload.utmTerm || undefined,
-      campaignId: campaignId ?? undefined,
-      customFields: payload.answers,
-    });
+  /**
+   * A lead whose email we already hold is a re-conversion, not a new person.
+   *
+   * `originalTrafficSource` is written once, at creation, and never touched again —
+   * that is what makes it *original*, and there is no "latest" column to move it
+   * to: most-recent-touch is a query over inboundLeadEvents, which holds one row per
+   * submission and so answers the whole history rather than only its last entry.
+   * Answers merge, newest winning.
+   */
+  const applyReconversion = (
+    existing: Contact,
+    answers: Record<string, string>,
+    incomingLeadSource?: string,
+  ): Contact => ({
+    ...existing,
+    // Two rules, deliberately opposite. Attribution is history and cannot be
+    // rewritten by a later visit; the four underwriting criteria are a claim about
+    // the present, so the newest answer replaces the old one.
+    //
+    // First touch wins: someone who first arrived through BizBuySell keeps that
+    // origin even after filling in a Facebook form. Getting this wrong silently
+    // rewrites where an existing lead came from, which is the one attribution
+    // regression this design can still have.
+    leadSource: incomingLeadSource
+      ? resolveLeadSource(existing.leadSource, incomingLeadSource)
+      : existing.leadSource,
+    ...leadQualificationFromAnswers(answers),
+    updatedAt: new Date(),
+  });
 
-    const nextContacts = [contact, ...contacts];
+  const findContactByEmail = (email: string): Contact | undefined => {
+    const needle = email.trim().toLowerCase();
+    return needle
+      ? contacts.find((c) => c.email.trim().toLowerCase() === needle)
+      : undefined;
+  };
+
+  /** Persists everything one ingested lead touches, in one place. */
+  const commitIngest = (
+    contact: Contact,
+    isReturning: boolean,
+    nextCampaigns: Campaign[] | null,
+    discoveredKeys: string[],
+    nextDefinitions: CustomFieldDefinition[],
+    answers: Record<string, string>,
+    leadFormId?: string,
+  ) => {
+    const nextContacts = isReturning
+      ? contacts.map((c) => (c.id === contact.id ? contact : c))
+      : [contact, ...contacts];
     setContacts(nextContacts);
     store.contacts.write(nextContacts);
 
-    if (campaignCreated) {
+    if (nextCampaigns) {
       setCampaigns(nextCampaigns);
       store.campaigns.write(nextCampaigns);
     }
@@ -1224,7 +1352,192 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       store.customFieldDefinitions.write(nextDefinitions);
     }
 
-    return { contact, trafficSource, campaignId, campaignCreated, discoveredKeys };
+    // Answers are rows, upserted one question at a time. A returning lead updates the
+    // questions this submission asked and leaves the rest standing — the behaviour a
+    // single merged blob could only approximate.
+    const nextAnswers = upsertAnswers(
+      contactLeadAnswers,
+      contact.id,
+      answers,
+      new Date().toISOString(),
+      leadFormId,
+    );
+    setContactLeadAnswers(nextAnswers);
+    store.contactLeadAnswers.write(nextAnswers);
+  };
+
+  const handleIngestLeadForm = (payload: LeadFormPayload): LeadIngestResult => {
+    const resolvedLeadSource = leadSourceFromUtm(payload.utmSource, payload.utmMedium);
+
+    // Find-or-create the campaign from utm_campaign — marketing never files a ticket
+    // to register a new one.
+    let campaignId: string | null = null;
+    let campaignCreated = false;
+    let nextCampaigns: Campaign[] | null = null;
+    const utmCampaign = payload.utmCampaign?.trim();
+
+    if (utmCampaign) {
+      const existing = campaigns.find(
+        (c) => c.utmCampaign.toLowerCase() === utmCampaign.toLowerCase(),
+      );
+      if (existing) {
+        campaignId = existing.id;
+      } else {
+        const created: Campaign = {
+          id: `campaign-${Date.now()}`,
+          name: utmCampaign,
+          utmCampaign,
+          status: "Active",
+          startDate: new Date(),
+          description: "Auto-created from an inbound lead form.",
+          createdAt: new Date(),
+        };
+        nextCampaigns = [created, ...campaigns];
+        campaignId = created.id;
+        campaignCreated = true;
+      }
+    }
+
+    const { discoveredKeys, nextDefinitions } = discoverAnswerFields(payload.answers);
+
+    const existing = findContactByEmail(payload.email);
+    const contact = existing
+      ? applyReconversion(existing, payload.answers, resolvedLeadSource)
+      : buildContact({
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          email: payload.email,
+          phone: payload.phone ?? "",
+          userType: "Borrower",
+          leadSource: resolvedLeadSource,
+          attributionSource: "web-form",
+          campaignId: campaignId ?? undefined,
+          ...leadQualificationFromAnswers(payload.answers),
+        });
+
+    commitIngest(
+      contact,
+      Boolean(existing),
+      nextCampaigns,
+      discoveredKeys,
+      nextDefinitions,
+      payload.answers,
+    );
+
+    return {
+      contact,
+      leadSource: resolvedLeadSource,
+      leadSourceKept: Boolean(existing) && contact.leadSource !== resolvedLeadSource,
+      campaignId,
+      campaignCreated,
+      discoveredKeys,
+      campaignMatchedBy: campaignId ? "utm_campaign" : null,
+      campaignMatchValue: utmCampaign || undefined,
+      isReturningContact: Boolean(existing),
+      identity: "email",
+    };
+  };
+
+  /**
+   * Meta Lead Ads ingest — the same endpoint, a different adapter.
+   *
+   * Nothing here reads a UTM, because Meta never sends one: the Instant Form lives
+   * inside the app. Attribution is derived from the platform's ids, and the campaign
+   * is matched on `campaign_id` against `Campaign.externalRefs` so a rename in Ads
+   * Manager cannot detach a lead from the campaign it belongs to.
+   */
+  const handleIngestMetaLead = (payload: MetaLeadPayload): LeadIngestResult => {
+    const attribution = metaLeadAttribution(payload);
+
+    // Identity first. A lead ad can be submitted with no email at all, and whether
+    // that becomes a contact is a policy decision, not an accident of the code.
+    const identity = resolveSubmissionIdentity({ email: payload.email, phone: payload.phone });
+    if (identity.kind === "none") {
+      return {
+        skipped: true,
+        identity: "none",
+        leadSource: attribution.leadSource,
+        campaignId: null,
+        campaignCreated: false,
+        discoveredKeys: [],
+        campaignMatchedBy: null,
+        isReturningContact: false,
+      };
+    }
+
+    let campaignId: string | null = null;
+    let campaignCreated = false;
+    let nextCampaigns: Campaign[] | null = null;
+    const metaCampaignId = payload.campaignId?.trim();
+
+    if (metaCampaignId) {
+      const existing = findCampaignByExternalId(campaigns, "meta", metaCampaignId);
+      if (existing) {
+        campaignId = existing.id;
+      } else {
+        // New Meta campaign: register it with its external ref so the next lead from
+        // the same id matches instantly, whatever the campaign is called by then.
+        const name = payload.campaignName?.trim() || `Meta campaign ${metaCampaignId}`;
+        const created: Campaign = {
+          id: `campaign-${Date.now()}`,
+          name,
+          utmCampaign: toUtmKey(name),
+          status: "Active",
+          startDate: new Date(),
+          description: "Auto-created from a Meta Lead Ads submission.",
+          externalRefs: [
+            { platform: "meta", externalId: metaCampaignId, externalName: name },
+          ],
+          createdAt: new Date(),
+        };
+        nextCampaigns = [created, ...campaigns];
+        campaignId = created.id;
+        campaignCreated = true;
+      }
+    }
+
+    const { discoveredKeys, nextDefinitions } = discoverAnswerFields(payload.answers);
+
+    // Same re-conversion rule as the web form: one adapter reading a different
+    // payload should not mean a different attribution policy.
+    const leadForm = leadFormByExternalRef(leadForms, "meta", payload.formId);
+    const existing = findContactByIdentity(identity, contacts);
+    const contact = existing
+      ? applyReconversion(existing, payload.answers, attribution.leadSource)
+      : buildContact({
+          firstName: payload.firstName,
+          lastName: payload.lastName,
+          email: payload.email,
+          phone: payload.phone ?? "",
+          userType: "Borrower",
+          leadSource: attribution.leadSource,
+          attributionSource: "service-meta-lead-ads",
+          campaignId: campaignId ?? undefined,
+          ...leadQualificationFromAnswers(payload.answers),
+        });
+
+    commitIngest(
+      contact,
+      Boolean(existing),
+      nextCampaigns,
+      discoveredKeys,
+      nextDefinitions,
+      payload.answers,
+      leadForm?.id,
+    );
+
+    return {
+      contact,
+      leadSource: attribution.leadSource,
+      leadSourceKept: Boolean(existing) && contact.leadSource !== attribution.leadSource,
+      campaignId,
+      campaignCreated,
+      discoveredKeys,
+      campaignMatchedBy: campaignId ? "meta_campaign_id" : null,
+      campaignMatchValue: metaCampaignId || undefined,
+      isReturningContact: Boolean(existing),
+      identity: identity.kind,
+    };
   };
 
   const handleCreateSegment = (segment: Omit<Segment, "id" | "createdAt" | "lastUpdatedAt">) => {
@@ -1304,7 +1617,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const segment = segments.find((s) => s.id === w.segmentId);
     const enrollmentPairs = segment && segment.status === "Active"
       ? contacts.flatMap((c) =>
-          getMatchedListings(c, segment.filters).map((l) => ({ contactId: c.id, listingId: l.id }))
+          getMatchedListings(c, segment.filters, applications).map((l) => ({ contactId: c.id, listingId: l.id }))
         )
       : [];
     const startDate = new Date();
@@ -1520,7 +1833,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     // getMatchedListings returns only the listings that satisfy the segment's listing filters.
     // For non-listing segments it returns all listings collapsed to one (primary) per contact.
     const pairs = selected.flatMap((contact) => {
-      return getMatchedListings(contact, segmentFilters)
+      return getMatchedListings(contact, segmentFilters, applications)
         .filter((l) => !alreadyEnrolledKeys.has(`${contact.id}::${l.id}`))
         .map((l) => ({ contact, listingId: l.id }));
     });
@@ -2208,14 +2521,24 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         handleCreateCompany,
         listings,
         campaigns,
+        leadForms,
+        contactLeadAnswers,
+        inboundLeadEvents,
+        handleResolveLeadEvent,
+        handleConfirmLeadEvent,
+        handleUpdateLeadForm,
+        platformAccounts,
+        handleUpdatePlatformAccount,
         handleCreateCampaign,
         handleUpdateCampaign,
         handleDeleteCampaign,
         customFieldDefinitions,
         handleCreateCustomField,
         handleUpdateCustomField,
-        handleDeleteCustomField,
+        handleArchiveCustomField,
+        handleRestoreCustomField,
         handleIngestLeadForm,
+        handleIngestMetaLead,
         handleCreateTask,
         handleBulkCreateTasks,
         loGroups,

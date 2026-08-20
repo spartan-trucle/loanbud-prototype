@@ -1,0 +1,189 @@
+[
+  {
+    "id": "ile-0990",
+    "platform": "meta",
+    "externalEventId": "70112",
+    "externalFormId": "1204487339112047",
+    "externalCampaignId": "23851004417650133",
+    "answers": {
+      "full_name": "Robert Taylor",
+      "email": "r.taylor@example.com",
+      "phone_number": "(555) 789-0123",
+      "what_is_the_purpose_of_the_loan?": "Working capital",
+      "how_much_funding_do_you_need?": "60000",
+      "what_is_your_fico_score?": "640-699"
+    },
+    "contactId": "7",
+    "status": "processed",
+    "resolution": "matched",
+    "resolutionReason": "matched_email",
+    "receivedAt": "2026-03-11T10:24:00.000Z"
+  },
+  {
+    "id": "ile-1001",
+    "platform": "meta",
+    "externalEventId": "77451",
+    "externalFormId": "1204487339112047",
+    "externalCampaignId": "23851004417650137",
+    "answers": {
+      "full_name": "James Lee",
+      "email": "james.lee@example.com",
+      "phone_number": "(555) 123-4567",
+      "what_is_the_purpose_of_the_loan?": "Working capital",
+      "how_much_funding_do_you_need?": "50000",
+      "what_is_your_fico_score?": "580-639"
+    },
+    "contactId": "1",
+    "status": "processed",
+    "resolution": "matched",
+    "resolutionReason": "matched_email",
+    "receivedAt": "2026-08-14T09:12:00.000Z"
+  },
+  {
+    "id": "ile-1002",
+    "platform": "meta",
+    "externalEventId": "77452",
+    "externalFormId": "1204487339112045",
+    "externalCampaignId": "23851004417650133",
+    "answers": {
+      "first_name": "Priya",
+      "last_name": "Raman",
+      "email": "priya.raman@example.com",
+      "phone_number": "(555) 902-7714",
+      "what_is_the_purpose_of_the_loan?": "Acquisition",
+      "how_much_funding_do_you_need?_(enter_any_amount)": "250000"
+    },
+    "contactId": "28",
+    "status": "processed",
+    "resolution": "created",
+    "resolutionReason": "created_new",
+    "receivedAt": "2026-08-15T14:03:00.000Z"
+  },
+  {
+    "id": "ile-1003",
+    "platform": "meta",
+    "externalEventId": "77453",
+    "externalFormId": "1204487339112047",
+    "externalCampaignId": "23851004417650138",
+    "answers": {
+      "full_name": "S. Chen",
+      "phone_number": "(555) 234-5678",
+      "what_is_the_purpose_of_the_loan?": "Equipment",
+      "how_long_have_you_been_in_business?": "3-5"
+    },
+    "status": "processed",
+    "resolution": "created",
+    "resolutionReason": "created_new",
+    "receivedAt": "2026-08-16T08:41:00.000Z",
+    "contactId": "29"
+  },
+  {
+    "id": "ile-1004",
+    "platform": "meta",
+    "externalEventId": "77454",
+    "externalFormId": "1204487339112046",
+    "externalCampaignId": "23851004417650139",
+    "answers": {
+      "first_name": "Dana",
+      "last_name": "Whitfield",
+      "phone_number": "(555) 345-6789",
+      "what_is_the_purpose_of_the_loan?": "Refinance"
+    },
+    "status": "processed",
+    "resolution": "created",
+    "resolutionReason": "created_new",
+    "receivedAt": "2026-08-17T11:20:00.000Z",
+    "contactId": "30"
+  },
+  {
+    "id": "ile-1005",
+    "platform": "meta",
+    "externalEventId": "77455",
+    "externalFormId": "1204487339112047",
+    "externalCampaignId": "23851004417650137",
+    "answers": {
+      "full_name": "M. Rodriguez",
+      "email": "emily.t@example.com",
+      "phone_number": "(555) 345-6789",
+      "what_is_the_purpose_of_the_loan?": "Working capital",
+      "how_much_funding_do_you_need?": "75000"
+    },
+    "status": "processed",
+    "resolution": "matched",
+    "resolutionReason": "matched_email",
+    "receivedAt": "2026-08-17T16:55:00.000Z",
+    "contactId": "4"
+  },
+  {
+    "id": "ile-1006",
+    "platform": "meta",
+    "externalEventId": "77456",
+    "externalFormId": "1204487339112045",
+    "externalCampaignId": "23851004417650134",
+    "answers": {
+      "first_name": "Chris",
+      "last_name": "Bell",
+      "phone_number": "(555) 100-2200",
+      "what_is_your_fico\u00ae_credit_score?": "640-699"
+    },
+    "status": "processed",
+    "resolution": "created",
+    "resolutionReason": "created_new",
+    "receivedAt": "2026-08-18T07:33:00.000Z",
+    "contactId": "31"
+  },
+  {
+    "id": "ile-1007",
+    "platform": "meta",
+    "externalEventId": "77457",
+    "externalFormId": "1204487339112047",
+    "answers": {
+      "what_is_the_purpose_of_the_loan?": "Real estate",
+      "how_much_funding_do_you_need?": "400000"
+    },
+    "status": "processed",
+    "resolution": "skipped",
+    "resolutionReason": "no_email",
+    "receivedAt": "2026-08-18T19:07:00.000Z"
+  },
+  {
+    "id": "ile-1008",
+    "platform": "meta",
+    "externalEventId": "77458",
+    "externalFormId": "1204487339112046",
+    "externalCampaignId": "23851004417650140",
+    "answers": {
+      "first_name": "Alan",
+      "last_name": "Osei",
+      "email": "a.osei@example.com",
+      "phone_number": "(555) 771-3390",
+      "what_is_your_timeline_for_accessing_the_funds?": "Immediately"
+    },
+    "status": "received",
+    "resolution": "created",
+    "resolutionReason": "created_new",
+    "receivedAt": "2026-08-19T02:15:00.000Z",
+    "contactId": "32"
+  },
+  {
+    "id": "ile-1009",
+    "platform": "meta",
+    "externalEventId": "77459",
+    "externalFormId": "1204487339112045",
+    "externalCampaignId": "23851004417650137",
+    "answers": {
+      "first_name": "Robert",
+      "last_name": "Taylor",
+      "email": "r.taylor@example.com",
+      "phone_number": "(555) 789-0123",
+      "what_is_the_purpose_of_the_loan?": "Acquisition",
+      "how_much_funding_do_you_need?_(enter_any_amount)": "185000",
+      "what_is_your_fico\u00ae_credit_score?": "700-739"
+    },
+    "contactId": "7",
+    "status": "processed",
+    "resolution": "matched",
+    "resolutionReason": "matched_email",
+    "receivedAt": "2026-08-12T15:48:00.000Z"
+  }
+]

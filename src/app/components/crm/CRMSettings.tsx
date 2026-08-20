@@ -12,7 +12,7 @@ import { SmsTemplatesTab } from "../email-workflows/settings/SmsTemplatesTab";
 import { VoicemailScriptsTab } from "../email-workflows/settings/VoicemailScriptsTab";
 import { VoicemailSettingsTab } from "../email-workflows/settings/VoicemailSettingsTab";
 import { SenderIdentitiesTab } from "../email-workflows/settings/SenderIdentitiesTab";
-import { CustomFieldsSettings } from "./CustomFieldsSettings";
+import { LeadSyncingSettings } from "./LeadSyncingSettings";
 import {
   CalendarSection,
   CallingSection,
@@ -257,14 +257,14 @@ export function CRMSettings() {
       <Tabs defaultValue="general" className="flex flex-col flex-1 min-h-0">
         <TabsList className="shrink-0 justify-start rounded-none border-b border-border bg-transparent px-8 h-10 gap-0">
           <TabsTrigger value="general"       className={TAB_TRIGGER}>General</TabsTrigger>
-          <TabsTrigger value="custom-fields" className={TAB_TRIGGER}>Custom Fields</TabsTrigger>
+          <TabsTrigger value="lead-syncing"  className={TAB_TRIGGER}>Lead syncing</TabsTrigger>
           <TabsTrigger value="lifecycle"     className={TAB_TRIGGER}>Lifecycle Stages</TabsTrigger>
           <TabsTrigger value="configuration" className={TAB_TRIGGER}>Configuration</TabsTrigger>
           <TabsTrigger value="notification"  className={TAB_TRIGGER}>Notification</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general"       className="flex-1 min-h-0 mt-0 overflow-hidden flex flex-col"><GeneralSection /></TabsContent>
-        <TabsContent value="custom-fields" className="flex-1 min-h-0 mt-0 overflow-y-auto"><div className="p-6"><CustomFieldsSettings /></div></TabsContent>
+        <TabsContent value="lead-syncing"  className="flex-1 min-h-0 mt-0 overflow-y-auto"><LeadSyncingSettings /></TabsContent>
         <TabsContent value="lifecycle"     className="flex-1 min-h-0 mt-0 overflow-y-auto"><LifecycleStagesTab /></TabsContent>
         <TabsContent value="configuration" className="flex-1 min-h-0 mt-0 overflow-hidden flex flex-col"><ConfigurationTab /></TabsContent>
         <TabsContent value="notification"  className="flex-1 min-h-0 mt-0 overflow-y-auto"><NotificationSection /></TabsContent>

@@ -30,7 +30,7 @@ const formatDateTime = (date: Date) =>
     minute: "2-digit",
   }).format(date);
 
-const FIELD_LABEL: Record<FilterRule["field"], string> = {
+const FIELD_LABEL: Record<string, string> = {
   listingStatus: "Listing Status",
   userType: "User Type",
   firstName: "First Name",
@@ -38,6 +38,10 @@ const FIELD_LABEL: Record<FilterRule["field"], string> = {
   email: "Email",
   phone: "Phone",
   listingName: "Listing Name",
+  self_reported_fico: "FICO Score",
+  funding_purpose: "Funding Purpose",
+  requested_amount: "Requested Amount",
+  funding_timeline: "Funding Timeline",
 };
 
 const OP_LABEL: Record<FilterRule["operator"], string> = {
@@ -45,6 +49,12 @@ const OP_LABEL: Record<FilterRule["operator"], string> = {
   "!=": "is not",
   contains: "contains",
   not_contains: "not contains",
+  ">": "greater than",
+  "<": "less than",
+  ">=": "at least",
+  "<=": "at most",
+  before: "before",
+  after: "after",
 };
 
 function FilterRuleChip({

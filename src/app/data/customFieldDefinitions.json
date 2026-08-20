@@ -1,10 +1,34 @@
 [
   {
+    "id": "cfd-self-reported-fico",
+    "key": "self_reported_fico",
+    "label": "Self-reported FICO",
+    "type": "select",
+    "options": [
+      "Below 600",
+      "600 – 639",
+      "640 – 679",
+      "680 – 719",
+      "720+"
+    ],
+    "section": "Questionnaire",
+    "isVisible": true,
+    "isFilterable": true,
+    "isAutoDiscovered": false,
+    "createdAt": "2026-06-01T00:00:00.000Z"
+  },
+  {
     "id": "cfd-funding-purpose",
     "key": "funding_purpose",
     "label": "Funding purpose",
     "type": "select",
-    "options": ["Working capital", "Equipment", "Acquisition", "Refinance", "Real estate"],
+    "options": [
+      "Working capital",
+      "Equipment",
+      "Acquisition",
+      "Refinance",
+      "Real estate"
+    ],
     "section": "Questionnaire",
     "isVisible": true,
     "isFilterable": true,
@@ -12,11 +36,17 @@
     "createdAt": "2026-06-01T00:00:00.000Z"
   },
   {
-    "id": "cfd-budget-range",
-    "key": "budget_range",
-    "label": "Budget range",
+    "id": "cfd-requested-amount",
+    "key": "requested_amount",
+    "label": "Requested amount",
     "type": "select",
-    "options": ["Under $100k", "$100k – $250k", "$250k – $500k", "$500k – $1M", "Over $1M"],
+    "options": [
+      "Under $100k",
+      "$100k – $250k",
+      "$250k – $500k",
+      "$500k – $1M",
+      "Over $1M"
+    ],
     "section": "Questionnaire",
     "isVisible": true,
     "isFilterable": true,
@@ -24,11 +54,15 @@
     "createdAt": "2026-06-01T00:00:00.000Z"
   },
   {
-    "id": "cfd-timeline",
-    "key": "timeline",
-    "label": "Timeline",
+    "id": "cfd-funding-timeline",
+    "key": "funding_timeline",
+    "label": "Funding timeline",
     "type": "select",
-    "options": ["Immediately", "2 – 4 weeks", "4 weeks+"],
+    "options": [
+      "Immediately",
+      "2 – 4 weeks",
+      "4 weeks+"
+    ],
     "section": "Questionnaire",
     "isVisible": true,
     "isFilterable": true,

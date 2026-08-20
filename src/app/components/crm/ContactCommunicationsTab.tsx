@@ -332,6 +332,7 @@ export function ContactCommunicationsTab({
     emailHistory,
     contacts,
     segments,
+    applications,
     handlePauseAllEnrollments,
     handleResendMessage,
   } = useAppData();
@@ -348,7 +349,9 @@ export function ContactCommunicationsTab({
 
   // User Segments
   const contact = contacts.find(c => c.id === contactId);
-  const contactSegments = contact ? getContactSegments(contact, segments) : [];
+  const contactSegments = contact
+    ? getContactSegments(contact, segments, applications)
+    : [];
 
   // Scheduled Messages
   const allScheduledMessages: ScheduledMessage[] = [];
