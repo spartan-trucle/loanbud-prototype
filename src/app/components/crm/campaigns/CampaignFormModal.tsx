@@ -20,7 +20,11 @@ import {
 } from "../../ui/select";
 import { Textarea } from "../../ui/textarea";
 import { useAppData } from "@/app/contexts/AppDataContext";
-import { toUtmKey } from "@/app/data/campaignUtils";
+import {
+  toUtmKey,
+  webCampaignKey,
+  withWebCampaignKey,
+} from "@/app/data/campaignUtils";
 import type { Campaign, CampaignStatus } from "@/app/types";
 
 const STATUSES: CampaignStatus[] = ["Draft", "Active", "Paused", "Completed"];
@@ -53,7 +57,7 @@ export function CampaignFormModal({
   useEffect(() => {
     if (!open) return;
     setName(campaign?.name ?? "");
-    setUtmCampaign(campaign?.utmCampaign ?? "");
+    setUtmCampaign(campaign ? (webCampaignKey(campaign) ?? "") : "");
     setUtmTouched(Boolean(campaign));
     setStatus(campaign?.status ?? "Draft");
     setStartDate(toDateInput(campaign?.startDate));
@@ -63,13 +67,15 @@ export function CampaignFormModal({
 
   // Until the user edits the key by hand, it tracks the name — the common case.
   const effectiveUtm = utmTouched ? utmCampaign : toUtmKey(name);
-  const canSubmit = name.trim().length > 0 && effectiveUtm.length > 0;
+  // The web key is optional now: a campaign that only ever runs as Meta Instant Forms
+  // has no landing page, so there is no utm_campaign for it to carry.
+  const canSubmit = name.trim().length > 0;
 
   const submit = () => {
     if (!canSubmit) return;
     const payload = {
       name: name.trim(),
-      utmCampaign: effectiveUtm,
+      externalRefs: withWebCampaignKey(campaign?.externalRefs, effectiveUtm),
       status,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
@@ -93,7 +99,8 @@ export function CampaignFormModal({
           <DialogTitle>{campaign ? "Edit campaign" : "New campaign"}</DialogTitle>
           <DialogDescription>
             Leads arriving with this <code>utm_campaign</code> value are attributed here
-            automatically — no engineering work per campaign.
+            automatically. Meta campaigns attach themselves by id — nothing to fill in
+            for those.
           </DialogDescription>
         </DialogHeader>
 
@@ -109,7 +116,7 @@ export function CampaignFormModal({
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="campaign-utm">utm_campaign</Label>
+            <Label htmlFor="campaign-utm">Web campaign key (optional)</Label>
             <Input
               id="campaign-utm"
               value={effectiveUtm}
@@ -120,8 +127,14 @@ export function CampaignFormModal({
               }}
             />
             <p className="text-xs text-muted-foreground">
-              Tracking link:{" "}
-              <code>https://loanbud.com/?utm_campaign={effectiveUtm || "…"}</code>
+              {effectiveUtm ? (
+                <>
+                  Tracking link:{" "}
+                  <code>https://apply.loanbud.com/?utm_campaign={effectiveUtm}</code>
+                </>
+              ) : (
+                "Leave blank when this campaign has no landing page of ours."
+              )}
             </p>
           </div>
 

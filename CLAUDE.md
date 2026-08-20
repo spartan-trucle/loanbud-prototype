@@ -47,8 +47,13 @@ rewrite that sends every path to `index.html`.
   contact is created. Replaced the HubSpot-shaped Original/Latest Traffic Source pair;
   "most recent touch" is a query over `inboundLeadEvents`, not a column
 - `src/app/data/metaLeadAds.ts` — Meta Lead Ads adapter: Instant Forms carry no UTM, so
-  attribution and campaign matching are derived from Meta's ids (`campaign_id` → `Campaign.externalRefs`)
-- `src/app/data/campaignUtils.ts` — campaign resolution for a contact, utm key helper
+  attribution is derived from Meta's ids. Campaign matching itself lives in
+  `campaignUtils.ts` — it was never Meta-specific
+- `src/app/data/campaignUtils.ts` — campaign resolution for a contact, plus
+  `findCampaignByExternalId`: every channel matches through `Campaign.externalRefs`,
+  including the web, whose `utm_campaign` value is stored as a `web` ref. There is no
+  `Campaign.utmCampaign` column — it was one more thing an auto-created Meta campaign
+  had to invent, and the invented slug collided as soon as two ad campaigns shared a name
 - `src/app/data/campaignMetrics.ts` — pure funnel (Leads → Applications → Funded) /
   lead-quality / platform-split maths shared by CampaignList and CampaignDetail. No cost or
   ROI maths: `Campaign.spend` is deprecated and unread

@@ -258,7 +258,6 @@ describe("platformSplit", () => {
   const campaign: Campaign = {
     id: "camp-1",
     name: "Epsilon",
-    utmCampaign: "epsilon",
     status: "Active",
     createdAt: new Date("2026-05-20"),
     externalRefs: [

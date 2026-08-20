@@ -187,17 +187,17 @@ export type CampaignStatus = "Draft" | "Active" | "Paused" | "Completed";
  * rename campaigns inside Ads Manager and the id is what survives that.
  */
 export interface CampaignExternalRef {
-  /** Ad platform slug, e.g. "meta" or "google". */
+  /** Platform slug: "meta", "google", "bizbuysell", or "web" for a landing page. */
   platform: string;
-  /** The platform's own campaign id — the join key. */
+  /** The platform's own campaign id — the join key. For "web", the utm_campaign value. */
   externalId: string;
   /** The platform's current campaign name. Display only; never match on it. */
   externalName: string;
 }
 
 /**
- * A marketing campaign — its own object, keyed by `utmCampaign`. Contacts point at
- * it, so one campaign running across several channels stays a single row.
+ * A marketing campaign — its own object. Contacts point at it, so one campaign
+ * running across several channels stays a single row.
  *
  * There is no single `channel` field: a campaign's channels are derived from its
  * `externalRefs` and from the traffic sources of the contacts attributed to it, both
@@ -206,8 +206,6 @@ export interface CampaignExternalRef {
 export interface Campaign {
   id: string;
   name: string;
-  /** The `utm_campaign` value that links inbound leads to this campaign. */
-  utmCampaign: string;
   status: CampaignStatus;
   /**
    * Total media spend, in USD.

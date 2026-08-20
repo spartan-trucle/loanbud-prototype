@@ -1,8 +1,4 @@
-import type {
-  Campaign,
-  MetaLeadPayload,
-  MetaPlatform,
-} from "../types";
+import type { MetaLeadPayload, MetaPlatform } from "../types";
 
 /**
  * The Meta Lead Ads adapter.
@@ -114,28 +110,6 @@ export function metaLeadAttribution(payload: MetaLeadPayload): MetaAttribution {
       ? "is_organic = true, and Organic social is not in the traffic-source enum — it needs website analytics that is not connected, so the lead lands in Offline sources"
       : `Paid ${platformLabel} impression — every Lead Ads submission with is_organic = false is paid social`,
   };
-}
-
-/**
- * Find the CRM campaign that owns a platform-side campaign id.
- *
- * The id is the key, never the name: marketers rename campaigns inside Ads Manager
- * whenever they feel like it, and eight of LoanBud's Meta campaigns share the
- * "Epsilon" prefix, so a name match would either miss or over-match.
- */
-export function findCampaignByExternalId(
-  campaigns: Campaign[],
-  platform: string,
-  externalId: string,
-): Campaign | undefined {
-  const id = externalId.trim();
-  if (!id) return undefined;
-
-  return campaigns.find((campaign) =>
-    campaign.externalRefs?.some(
-      (ref) => ref.platform === platform && ref.externalId === id,
-    ),
-  );
 }
 
 /** Lead source recorded on the contact — where the record came from, in one string. */

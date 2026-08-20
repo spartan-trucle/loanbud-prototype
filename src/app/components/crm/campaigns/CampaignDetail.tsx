@@ -4,7 +4,7 @@ import { ArrowLeft, ChevronRight, Copy, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../../ui/button";
 import { useAppData } from "@/app/contexts/AppDataContext";
-import { contactsInCampaign } from "@/app/data/campaignUtils";
+import { contactsInCampaign, webCampaignKey } from "@/app/data/campaignUtils";
 import { activeFields } from "@/app/data/customFieldUsage";
 import {
   formatCurrency,
@@ -77,9 +77,13 @@ export function CampaignDetail() {
     );
   }
 
-  const trackingLink = `https://loanbud.com/?utm_campaign=${campaign.utmCampaign}`;
+  const webKey = webCampaignKey(campaign);
+  const trackingLink = webKey
+    ? `https://apply.loanbud.com/?utm_campaign=${webKey}`
+    : undefined;
 
   const copyLink = () => {
+    if (!trackingLink) return;
     navigator.clipboard
       .writeText(trackingLink)
       .then(() => toast.success("Tracking link copied"))
@@ -131,15 +135,17 @@ export function CampaignDetail() {
           />
         </div>
 
-        <div className="mt-5 flex items-center gap-2">
-          <code className="flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
-            {trackingLink}
-          </code>
-          <Button variant="outline" className="h-9" onClick={copyLink}>
-            <Copy className="w-4 h-4 mr-1.5" />
-            Copy link
-          </Button>
-        </div>
+        {trackingLink && (
+          <div className="mt-5 flex items-center gap-2">
+            <code className="flex-1 truncate rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+              {trackingLink}
+            </code>
+            <Button variant="outline" className="h-9" onClick={copyLink}>
+              <Copy className="w-4 h-4 mr-1.5" />
+              Copy link
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto px-8 py-6">

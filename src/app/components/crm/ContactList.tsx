@@ -26,7 +26,11 @@ import {
   leadSourceTone,
 } from "@/app/data/attribution";
 import { contactsSharingPhone } from "@/app/data/contactDuplicates";
-import { resolveCampaign, resolveCampaignId } from "@/app/data/campaignUtils";
+import {
+  resolveCampaign,
+  resolveCampaignId,
+  webCampaignKey,
+} from "@/app/data/campaignUtils";
 
 type ActiveView = "all" | "broker" | "lender" | "partner";
 
@@ -360,7 +364,7 @@ export function ContactList() {
                       return campaign ? (
                         <span
                           className="text-sm text-blue-600"
-                          title={`utm_campaign=${campaign.utmCampaign}`}
+                          title={webCampaignKey(campaign) ?? campaign.name}
                         >
                           {campaign.name}
                         </span>

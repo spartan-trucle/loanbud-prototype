@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from "react";
 import { toast } from "sonner";
 import type { Contact, ChannelOptOut, EmailRecord, Task, TaskItem, Application, BusinessAcquisitionRecord, Segment, FilterRule, Workflow, WorkflowEnrollment, WorkflowStep, WorkflowStepProgress, ContactActivityRecord, CustomWorkflowStep, AdminEmailTemplate, SmsTemplate, VoicemailScript, VoicemailSettings, SenderIdentity, Notification, NotificationPreferences, LoGroup, TemplateFolder, NewContactInput, ContactImportSource, Campaign, CustomFieldDefinition, LeadFormPayload, LeadFormDefinition, LeadIngestResult, MetaLeadPayload, PlatformAccount, InboundLeadEvent, ContactLeadAnswer, Company, ListingRecord } from "../types";
 import { leadSourceFromUtm, resolveLeadSource } from "../data/attribution";
-import { toUtmKey } from "../data/campaignUtils";
+import { findCampaignByExternalId } from "../data/campaignUtils";
 import {
   findContactByIdentity,
   leadFormByExternalRef,
@@ -10,10 +10,7 @@ import {
 } from "../data/leadFormUtils";
 import { upsertAnswers } from "../data/contactLeadAnswers";
 import { leadQualificationFromAnswers } from "../data/leadQualification";
-import {
-  findCampaignByExternalId,
-  metaLeadAttribution,
-} from "../data/metaLeadAds";
+import { metaLeadAttribution } from "../data/metaLeadAds";
 import { store } from "../data/store";
 import type { TeamRole } from "../config/team";
 import { useContentLibrary } from "./useContentLibrary";
@@ -69,7 +66,7 @@ interface AppDataContextValue {
   companies: Company[];
   handleCreateCompany: (input: Omit<Company, "id" | "createdAt">) => Company;
   listings: ListingRecord[];
-  // Campaigns — a first-class object keyed by utm_campaign
+  // Campaigns — a first-class object; platform ids and web utm keys point at it
   campaigns: Campaign[];
   /** Lead forms as defined on the platform, with the CRM's field mappings. */
   leadForms: LeadFormDefinition[];
@@ -1187,7 +1184,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const handleCreateCampaign = (input: Omit<Campaign, "id" | "createdAt">): Campaign => {
     const created: Campaign = {
       ...input,
-      utmCampaign: input.utmCampaign || toUtmKey(input.name),
       id: `campaign-${Date.now()}`,
       createdAt: new Date(),
     };
@@ -1370,26 +1366,31 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const resolvedLeadSource = leadSourceFromUtm(payload.utmSource, payload.utmMedium);
 
     // Find-or-create the campaign from utm_campaign — marketing never files a ticket
-    // to register a new one.
+    // to register a new one. The key is stored as a `web` external ref, so this is the
+    // same lookup Meta uses with a campaign id; only the platform differs.
     let campaignId: string | null = null;
     let campaignCreated = false;
     let nextCampaigns: Campaign[] | null = null;
     const utmCampaign = payload.utmCampaign?.trim();
 
     if (utmCampaign) {
-      const existing = campaigns.find(
-        (c) => c.utmCampaign.toLowerCase() === utmCampaign.toLowerCase(),
-      );
+      const existing = findCampaignByExternalId(campaigns, "web", utmCampaign);
       if (existing) {
         campaignId = existing.id;
       } else {
         const created: Campaign = {
           id: `campaign-${Date.now()}`,
           name: utmCampaign,
-          utmCampaign,
           status: "Active",
           startDate: new Date(),
           description: "Auto-created from an inbound lead form.",
+          externalRefs: [
+            {
+              platform: "web",
+              externalId: utmCampaign,
+              externalName: `utm_campaign=${utmCampaign}`,
+            },
+          ],
           createdAt: new Date(),
         };
         nextCampaigns = [created, ...campaigns];
@@ -1481,7 +1482,6 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         const created: Campaign = {
           id: `campaign-${Date.now()}`,
           name,
-          utmCampaign: toUtmKey(name),
           status: "Active",
           startDate: new Date(),
           description: "Auto-created from a Meta Lead Ads submission.",

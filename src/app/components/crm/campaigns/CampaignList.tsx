@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import { useAppData } from "@/app/contexts/AppDataContext";
+import { webCampaignKey } from "@/app/data/campaignUtils";
 import {
   campaignFunnel,
   compareByOutcome,
@@ -52,7 +53,11 @@ export function CampaignList() {
       ? campaigns.filter(
           (c) =>
             c.name.toLowerCase().includes(term) ||
-            c.utmCampaign.toLowerCase().includes(term),
+            (c.externalRefs ?? []).some(
+              (ref) =>
+                ref.externalId.toLowerCase().includes(term) ||
+                ref.externalName?.toLowerCase().includes(term),
+            ),
         )
       : campaigns;
 
@@ -148,7 +153,8 @@ export function CampaignList() {
                             {campaign.name}
                           </div>
                           <code className="text-xs text-muted-foreground">
-                            {campaign.utmCampaign}
+                            {webCampaignKey(campaign) ??
+                              `${campaign.externalRefs?.length ?? 0} platform campaigns`}
                           </code>
                         </td>
                         <td className="px-6 py-4">

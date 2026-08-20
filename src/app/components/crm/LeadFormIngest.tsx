@@ -13,10 +13,10 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useAppData } from "@/app/contexts/AppDataContext";
+import { findCampaignByExternalId } from "@/app/data/campaignUtils";
 import {
   META_LEAD_FORMS,
   META_PLATFORMS,
-  findCampaignByExternalId,
   metaFormById,
   metaLeadAttribution,
   type MetaAttribution,
@@ -160,8 +160,8 @@ export function LeadFormIngest() {
     ? metaAttribution.leadSource
     : leadSourceFromUtm(utmSource, utmMedium);
 
-  const campaignExists = campaigns.some(
-    (c) => c.utmCampaign.toLowerCase() === utmCampaign.trim().toLowerCase(),
+  const campaignExists = Boolean(
+    findCampaignByExternalId(campaigns, "web", utmCampaign),
   );
 
   const selectForm = (id: string) => {
